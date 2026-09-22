@@ -2,7 +2,7 @@
 
 Architecture and scope decisions live in [docs/architecture-blueprint.html](docs/architecture-blueprint.html) — read §22 (MVP) and §25 (resolved contradictions) before touching anything here.
 
-Phases 1–3 are done: foundation scaffold, full database schema, and auth/RBAC. Phase 4 (collection points & materials admin CRUD) is next.
+Phases 1–4 are done: foundation scaffold, full database schema, auth/RBAC, and collection points & materials admin CRUD. Phase 5 (inventory ledger service) is next.
 
 ## Layout
 
@@ -83,6 +83,22 @@ cd backend
 ```
 It asks for an email, name, and password, and creates that user as an admin. Every account after that should go through `POST /auth/users` instead.
 
-## Next: Phase 4
+## Collection points & materials (Phase 4, done)
 
-Collection points & materials admin CRUD, per-point material acceptance, rate history — protected by the guards built in Phase 3. See §21 for the full phase sequence and §22 for what's actually in scope this build.
+Admin CRUD over `/api/v1/collection-points` and `/api/v1/materials` — reads are open to any authenticated user, writes (`POST`/`PATCH`/`DELETE`) require the admin role via `require_role(...)` from Phase 3. No schema changes were needed — Phase 2 already had every table this phase's endpoints touch.
+
+The core piece is per-point material acceptance and rate history (§08 challenges 2 & 3), nested under a collection point:
+
+- `POST /collection-points/{id}/materials` — start accepting a material at a branch, at a given rate
+- `PATCH /collection-points/{id}/materials/{material_id}/rate` — change the rate: closes the currently-open `material_rate` row (`effective_to = now`) and inserts a new one, rather than overwriting the rate in place — so the rate that was actually applied to a past transaction is never lost
+- `DELETE /collection-points/{id}/materials/{material_id}` — stop accepting a material at a branch; also closes its open rate
+- `GET /collection-points/{id}/materials` — accepted materials + current rate (the eventual public-site source of truth)
+- `GET /collection-points/{id}/materials/{material_id}/rate-history` — full rate history for that branch/material
+
+Every admin write (material/point created or updated, rate changed, acceptance added or removed) writes an `audit_log` row — `backend/app/services/audit_service.py`.
+
+Verified against the real database: creating a material, accepting it at a branch, changing its rate, and confirming the rate history shows the old row closed out and the new one open — not asserted against a mock, the actual Postgres rows.
+
+## Next: Phase 5
+
+The inventory ledger service — the append-only ledger + atomic summary writes from blueprint §11, the actual correctness centerpiece of this project. See §21 for the full phase sequence and §22 for what's actually in scope this build.
