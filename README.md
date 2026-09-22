@@ -2,7 +2,7 @@
 
 Architecture and scope decisions live in [docs/architecture-blueprint.html](docs/architecture-blueprint.html) — read §22 (MVP) and §25 (resolved contradictions) before touching anything here.
 
-Phases 1–4 are done: foundation scaffold, full database schema, auth/RBAC, and collection points & materials admin CRUD. Phase 5 (inventory ledger service) is next.
+Phases 1–5 are done: foundation scaffold, full database schema, auth/RBAC, collection points & materials admin CRUD, and the inventory ledger service. Phase 6 (suppliers & collection transactions) is next.
 
 ## Layout
 
@@ -99,6 +99,20 @@ Every admin write (material/point created or updated, rate changed, acceptance a
 
 Verified against the real database: creating a material, accepting it at a branch, changing its rate, and confirming the rate history shows the old row closed out and the new one open — not asserted against a mock, the actual Postgres rows.
 
-## Next: Phase 5
+## Inventory ledger (Phase 5, done)
 
-The inventory ledger service — the append-only ledger + atomic summary writes from blueprint §11, the actual correctness centerpiece of this project. See §21 for the full phase sequence and §22 for what's actually in scope this build.
+`backend/app/services/inventory_service.py` — the actual correctness centerpiece of this project (§11). No routes yet, deliberately: this is internal service infrastructure that Phase 6 (collection transactions) and Phase 9 (dashboards) will call, built and proven correct first.
+
+`post_movement(...)` appends one immutable `inventory_ledger` row and updates `inventory_summary` in the same DB transaction — never a read-then-write. It does **not** commit; the caller (e.g. a future "record a collection" endpoint) composes it into a larger transaction alongside whatever else needs to succeed or fail atomically.
+
+**A real bug found and fixed while building this, not assumed away**: the first version used `INSERT ... ON CONFLICT DO UPDATE` for the atomic increment. Postgres validates a `CHECK` constraint against that statement's raw `VALUES` tuple during its speculative-insert phase — *before* it even knows a conflict exists — so a valid negative delta (e.g. a correction on top of a healthy balance) could be wrongly rejected as if it were a fresh negative starting balance. Reproduced against a throwaway table to confirm it was genuine Postgres behavior before changing anything. Fixed by trying a plain atomic `UPDATE` first (whose `CHECK` validation runs against the real computed row) and only falling back to `INSERT` — inside a `SAVEPOINT` to keep a lost race retryable — when no row exists yet.
+
+`backend/tests/test_inventory_service.py` proves, against the real database:
+- sequential collections accumulate correctly and the ledger sums to the summary balance
+- an adjustment can correctly reduce a healthy balance (the exact case the bug above broke)
+- an adjustment that would push the balance negative is rejected and leaves no partial trace
+- **20 concurrent threads, each its own DB connection, each posting +1 at the same instant, produce a final balance of exactly 20** — the actual claim this whole design rests on, proven against real concurrent Postgres connections, not asserted in a single-threaded test that couldn't have caught a race even if one existed
+
+## Next: Phase 6
+
+Collection transactions (online-only first, no offline sync yet) — walk-in collectors per §25 item 7, posting to the Phase 5 ledger. See §21 for the full phase sequence and §22 for what's actually in scope this build.
