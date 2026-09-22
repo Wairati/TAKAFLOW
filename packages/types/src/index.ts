@@ -79,3 +79,25 @@ export interface SyncResultItem {
 export interface SyncBatchResponse {
   results: SyncResultItem[];
 }
+
+export interface CollectionPointOut {
+  id: number;
+  name: string;
+  address: string;
+  county: string;
+  latitude: number | null;
+  longitude: number | null;
+  opening_hours: string | null;
+  is_active: boolean;
+}
+
+// Phase 9: the read view over the Phase 5 ledger-backed balances.
+export interface InventorySummaryOut {
+  collection_point_id: number;
+  material_id: number;
+  material_name: string;
+  unit: string;
+  quantity_on_hand: number;
+  quantity_reserved: number;
+  updated_at: string;
+}

@@ -4,7 +4,7 @@
 // because Background Sync API support is unreliable (notably Safari/iOS).
 import { useCallback, useEffect, useState } from "react";
 import { db, type OutboxRow } from "./db";
-import { api } from "./auth";
+import { api } from "@takaflow/ui";
 
 const SYNC_INTERVAL_MS = 30_000;
 

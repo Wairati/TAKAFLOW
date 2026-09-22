@@ -3,11 +3,13 @@ derived, fast-read cache of it, kept correct by a single atomic UPDATE per
 write — never a read-then-write in application code. This is deliberately the
 only place in the codebase allowed to touch inventory_summary directly."""
 
-from sqlalchemy import func, update as sql_update
+from sqlalchemy import func, select, update as sql_update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.inventory import InventoryLedger, InventorySummary, MovementType
+from app.models.material import Material
+from app.schemas.inventory import InventorySummaryOut
 
 
 def _summary_deltas(movement_type: MovementType, quantity: float) -> tuple[float, float]:
@@ -136,7 +138,29 @@ def get_balance(db: Session, collection_point_id: int, material_id: int) -> Inve
 
 
 def list_balances_for_point(db: Session, collection_point_id: int) -> list[InventorySummary]:
-    from sqlalchemy import select
-
     stmt = select(InventorySummary).where(InventorySummary.collection_point_id == collection_point_id)
     return list(db.scalars(stmt))
+
+
+def list_summaries(db: Session, *, collection_point_id: int | None) -> list[InventorySummaryOut]:
+    """Phase 9: the admin/staff-facing read view over Phase 5's ledger-backed
+    balances, with the material's name/unit joined in for display."""
+    stmt = select(InventorySummary, Material.name, Material.unit).join(
+        Material, Material.id == InventorySummary.material_id
+    )
+    if collection_point_id is not None:
+        stmt = stmt.where(InventorySummary.collection_point_id == collection_point_id)
+    stmt = stmt.order_by(InventorySummary.collection_point_id, Material.name)
+
+    return [
+        InventorySummaryOut(
+            collection_point_id=summary.collection_point_id,
+            material_id=summary.material_id,
+            material_name=name,
+            unit=unit,
+            quantity_on_hand=float(summary.quantity_on_hand),
+            quantity_reserved=float(summary.quantity_reserved),
+            updated_at=summary.updated_at,
+        )
+        for summary, name, unit in db.execute(stmt).all()
+    ]

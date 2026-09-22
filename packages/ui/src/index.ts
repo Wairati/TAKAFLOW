@@ -1,5 +1,5 @@
-// Shared design-system components (buttons, tables, form fields).
-// Empty until real screens need their first shared component — see
-// docs/architecture-blueprint.html §15.
+// Shared design-system components and cross-app logic (auth session
+// handling, login form) — see docs/architecture-blueprint.html §15.
 
-export {};
+export { AuthProvider, useAuth, api } from "./auth";
+export { LoginForm } from "./LoginForm";

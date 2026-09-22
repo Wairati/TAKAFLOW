@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -26,20 +28,22 @@ def record_collection(
 @router.get("", response_model=list[CollectionTransactionOut])
 def list_transactions(
     collection_point_id: int | None = None,
+    on_date: date | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[CollectionTransactionOut]:
-    """§06: Admin sees all branches; Staff is scoped to their own."""
+    """§06: Admin sees all branches; Staff is scoped to their own. `on_date`
+    powers Phase 9's "today's collections" admin view."""
     if user.role == UserRole.ADMIN:
         return collection_transaction_service.list_transactions(
-            db, collection_point_id=collection_point_id, requester=user
+            db, collection_point_id=collection_point_id, requester=user, on_date=on_date
         )
 
     if collection_point_id is not None and collection_point_id != user.collection_point_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only view your own collection point")
 
     return collection_transaction_service.list_transactions(
-        db, collection_point_id=user.collection_point_id, requester=user
+        db, collection_point_id=user.collection_point_id, requester=user, on_date=on_date
     )
 
 

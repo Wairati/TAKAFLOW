@@ -7,7 +7,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "./db";
 import { queueCollection } from "./sync";
-import { api } from "./auth";
+import { api } from "@takaflow/ui";
 import type { UserOut } from "@takaflow/types";
 
 export function CollectionForm({ user }: { user: UserOut }) {

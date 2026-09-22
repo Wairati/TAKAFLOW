@@ -3,7 +3,10 @@
 
 import type {
   AcceptedMaterialOut,
+  CollectionPointOut,
   CollectionTransactionCreate,
+  CollectionTransactionOut,
+  InventorySummaryOut,
   SyncBatchResponse,
   TokenResponse,
   UserOut,
@@ -92,6 +95,21 @@ export function createApiClient(options: ApiClientOptions = {}) {
         method: "POST",
         body: JSON.stringify({ items }),
       }),
+
+    listCollectionPoints: () => request<CollectionPointOut[]>("/collection-points"),
+
+    listInventorySummary: (collectionPointId?: number) =>
+      request<InventorySummaryOut[]>(
+        `/inventory/summary${collectionPointId !== undefined ? `?collection_point_id=${collectionPointId}` : ""}`
+      ),
+
+    listCollectionTransactions: (params: { collectionPointId?: number; onDate?: string } = {}) => {
+      const query = new URLSearchParams();
+      if (params.collectionPointId !== undefined) query.set("collection_point_id", String(params.collectionPointId));
+      if (params.onDate) query.set("on_date", params.onDate);
+      const qs = query.toString();
+      return request<CollectionTransactionOut[]>(`/collection-transactions${qs ? `?${qs}` : ""}`);
+    },
   };
 }
 

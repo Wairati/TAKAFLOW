@@ -1,8 +1,9 @@
-// Session handling: the refresh token persists in localStorage (survives a
-// reload/reopen), the access token stays in memory only. On load, a stored
-// refresh token is exchanged for a fresh access token + the user's identity
-// — the same rotation the backend already enforces (§14/ADR-04), so this
-// app never has to special-case "am I still logged in."
+// Shared by every authenticated app (collection-app, admin-portal): session
+// handling where the refresh token persists in localStorage (survives a
+// reload/reopen) and the access token stays in memory only. On load, a
+// stored refresh token is exchanged for a fresh access token + the user's
+// identity — the same rotation the backend already enforces (§14/ADR-04), so
+// no app has to special-case "am I still logged in."
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { ApiError, createApiClient } from "@takaflow/api-client";
 import type { UserOut } from "@takaflow/types";

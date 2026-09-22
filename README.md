@@ -2,7 +2,7 @@
 
 Architecture and scope decisions live in [docs/architecture-blueprint.html](docs/architecture-blueprint.html) — read §22 (MVP) and §25 (resolved contradictions) before touching anything here.
 
-Phases 1–8 are done, including the offline-first collection app — the centerpiece of the project's technical argument. Phase 9 (admin portal & dashboards) is next.
+Phases 1–9 are done: the full core MVP per §22 is now built and verified. What remains is polish, not new architecture — see "Next" below.
 
 ## Layout
 
@@ -155,6 +155,23 @@ One real bug fixed along the way (not assumed away): the offline-submit test gen
 
 `backend/tests/test_sync.py` (4 tests) covers the server side; the interactive script above covers the actual user-facing claim end to end.
 
-## Next: Phase 9
+## Admin portal & dashboards (Phase 9, done)
 
-Admin portal & dashboards — reporting views over the real data now flowing from Phases 4–8. See §21 for the full phase sequence and §22 for what's actually in scope this build.
+`GET /api/v1/inventory/summary` (new) joins Phase 5's ledger-backed balances with material names for display, scoped the same way as everything else (admin sees all branches, staff their own). The existing `GET /collection-transactions` gained an `on_date` filter for "today's collections."
+
+`apps/admin-portal` now does something: real login (shared with collection-app — see below), a branch/date filter, a current-inventory table, and a today's-collections table. Deliberately still "thin" per §22 — no charts, no aggregates beyond what these two tables show.
+
+**Real duplication got resolved, not left to rot**: by Phase 9, both frontend apps needed the identical login flow. Rather than copy-pasting `auth.tsx`/`LoginForm.tsx` a second time, they moved into `packages/ui` — the package that existed since Phase 1 for exactly this and had sat empty until now. `@takaflow/api-client` and `@takaflow/types` grew the remaining read endpoints (`listCollectionPoints`, `listInventorySummary`, `listCollectionTransactions`).
+
+Verified live: real admin login against real data (two collection transactions, 4kg + 6kg) — the dashboard correctly shows 10kg on hand, resolves the branch's actual name rather than a raw ID, and lists both transactions for the day, including the "walk-in" label surfacing the no-supplier-registration decision (§25 item 7) directly in the UI. `backend/tests/test_inventory_summary.py` (3 tests) covers the scoping and date-filter logic; 43/43 backend tests pass overall.
+
+## MVP complete (§22)
+
+Every must-have item from the blueprint's MVP list is now built and verified: auth/RBAC, materials & branches, walk-in collection transactions, the inventory ledger, offline-first sync, manual payments, and the thin admin view. Predictive analytics, the buyer portal, the public site, and live M-Pesa disbursement remain out of scope per §22/§25 — deliberately, not by omission.
+
+## Optional next steps
+
+Nothing left is architecturally required for the MVP; what's left is hardening and packaging:
+- **Testing hardening** (§21 Phase 14) — the test suite already covers each phase's own correctness claims; a pass looking specifically for gaps *across* phases (e.g. what happens to a payment if its transaction's material is later deactivated) would be the highest-value use of remaining time.
+- **Deployment** (§21 Phase 15) — standing up the free-tier hosting from §20 so the app is reachable outside `localhost` for the defense.
+- Nice-to-haves from §22, only if time remains after the above: a simple rule-based low-stock flag off the ledger, a minimal public site, or the buyer portal with simple current-inventory-only matching.

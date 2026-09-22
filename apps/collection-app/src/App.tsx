@@ -1,5 +1,4 @@
-import { AuthProvider, useAuth } from "./auth";
-import { LoginForm } from "./LoginForm";
+import { AuthProvider, useAuth, LoginForm } from "@takaflow/ui";
 import { CollectionForm } from "./CollectionForm";
 import { OutboxStatus } from "./OutboxStatus";
 
@@ -7,7 +6,7 @@ function AuthedApp() {
   const { user, loading, logout } = useAuth();
 
   if (loading) return null;
-  if (!user) return <LoginForm />;
+  if (!user) return <LoginForm title="TAKAFLOW — Collection App" />;
 
   return (
     <main style={{ fontFamily: "sans-serif", maxWidth: 600, margin: "2rem auto", padding: "0 1rem" }}>

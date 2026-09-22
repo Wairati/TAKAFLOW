@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "./auth";
 
-export function LoginForm() {
+export function LoginForm({ title }: { title: string }) {
   const { login, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +21,7 @@ export function LoginForm() {
 
   return (
     <main style={{ fontFamily: "sans-serif", maxWidth: 360, margin: "4rem auto", padding: "0 1rem" }}>
-      <h1>TAKAFLOW — Collection App</h1>
+      <h1 style={{ fontSize: "1.5rem" }}>{title}</h1>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         <label>
           Email

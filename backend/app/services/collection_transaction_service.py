@@ -2,10 +2,10 @@
 no registration) and posting it to the Phase 5 inventory ledger. Online-only
 for now; Phase 8 adds the offline outbox on top without changing this."""
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.collection_transaction import CollectionTransaction
@@ -96,11 +96,15 @@ def record_collection(
 
 
 def list_transactions(
-    db: Session, *, collection_point_id: int | None, requester: User
+    db: Session, *, collection_point_id: int | None, requester: User, on_date: date | None = None
 ) -> list[CollectionTransactionOut]:
     stmt = select(CollectionTransaction).order_by(CollectionTransaction.occurred_at.desc())
     if collection_point_id is not None:
         stmt = stmt.where(CollectionTransaction.collection_point_id == collection_point_id)
+    if on_date is not None:
+        # Phase 9: the admin "today's collections" view - filters on the
+        # client-reported occurred_at, not created_at/sync time.
+        stmt = stmt.where(func.date(CollectionTransaction.occurred_at) == on_date)
 
     rows = db.scalars(stmt).all()
     return [to_out(row, float(row.material_rate.rate)) for row in rows]
