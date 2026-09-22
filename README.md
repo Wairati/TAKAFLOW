@@ -2,7 +2,7 @@
 
 Architecture and scope decisions live in [docs/architecture-blueprint.html](docs/architecture-blueprint.html) — read §22 (MVP) and §25 (resolved contradictions) before touching anything here.
 
-Phase 1 (foundation scaffold) is done: monorepo wiring, backend skeleton, CI. No features yet.
+Phase 1 (foundation scaffold) and Phase 2 (full database schema) are done. No API features yet — that starts at Phase 3.
 
 ## Layout
 
@@ -56,6 +56,14 @@ Each app calls the backend's `/health` endpoint on load and shows the result —
 cd backend && .venv\Scripts\python -m pytest
 ```
 
-## Next: Phase 2
+## Schema (Phase 2, done)
 
-Full schema from blueprint §08 (materials, collection points, collection transactions, the append-only inventory ledger) as Alembic migrations. See §21 for the full phase sequence and §22 for what's actually in scope this build.
+All 12 tables from blueprint §08 exist as one Alembic migration (`backend/alembic/versions/723deff43d87_initial_schema.py`), applied to the local `takaflow` database: `user`, `collection_point`, `material`, `collection_point_material`, `material_rate`, `collection_transaction`, `payment`, `inventory_ledger`, `inventory_summary`, `device`, `sync_log`, `audit_log`. No `supplier`, `buyer`, `buyer_request`, `material_transfer`, or `prediction` tables — those are future scope per §22/§25.
+
+One deliberate deviation from §08's wording: every `material_rate` row is tied to a specific branch (`collection_point_id` is `NOT NULL`, not an optional "global default"). Postgres unique indexes treat two `NULL`s as distinct, so a nullable branch column would have silently let two "global" rates for the same material both count as current — the exact kind of bug this project's ledger design exists to prevent. Simpler and correct beats matching the diagram literally.
+
+`backend/tests/test_inventory_constraints.py` proves the negative-inventory `CHECK` constraints actually reject bad data against the real database, not a mock.
+
+## Next: Phase 3
+
+Auth & RBAC — login, JWT/refresh tokens, and role guards enforcing the §06 permissions matrix. See §21 for the full phase sequence and §22 for what's actually in scope this build.
