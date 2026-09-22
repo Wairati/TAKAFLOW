@@ -1,0 +1,1212 @@
+<title>TAKAFLOW Blueprint</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F6F4EE;
+  --surface:#FFFFFF;
+  --surface-2:#EFEBE1;
+  --ink:#1B2420;
+  --ink-muted:#55625A;
+  --ink-faint:#8A9389;
+  --border:#DBD5C6;
+  --accent:#1F5C46;
+  --accent-ink:#0F332A;
+  --accent-soft:#E3ECE4;
+  --accent-soft-border:#C4D6C7;
+  --warn:#8A4A2A;
+  --warn-soft:#F3E7DC;
+  --warn-soft-border:#DEC3A9;
+  --danger:#8C3A34;
+  --danger-soft:#F5E4E1;
+  --ok:#2E6B4F;
+  --code-bg:#EFEEE6;
+  --shadow: 0 1px 2px rgba(27,36,32,0.06), 0 8px 24px rgba(27,36,32,0.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121815;
+    --surface:#182019;
+    --surface-2:#1D2620;
+    --ink:#E9EEE9;
+    --ink-muted:#A7B3AA;
+    --ink-faint:#71807A;
+    --border:#2B362F;
+    --accent:#5FBF98;
+    --accent-ink:#CDEFDE;
+    --accent-soft:#1C2E27;
+    --accent-soft-border:#2E4B3E;
+    --warn:#E0A876;
+    --warn-soft:#2E2419;
+    --warn-soft-border:#4A3722;
+    --danger:#E19A93;
+    --danger-soft:#2E1D1B;
+    --ok:#6FCBA4;
+    --code-bg:#1D2620;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121815;
+  --surface:#182019;
+  --surface-2:#1D2620;
+  --ink:#E9EEE9;
+  --ink-muted:#A7B3AA;
+  --ink-faint:#71807A;
+  --border:#2B362F;
+  --accent:#5FBF98;
+  --accent-ink:#CDEFDE;
+  --accent-soft:#1C2E27;
+  --accent-soft-border:#2E4B3E;
+  --warn:#E0A876;
+  --warn-soft:#2E2419;
+  --warn-soft-border:#4A3722;
+  --danger:#E19A93;
+  --danger-soft:#2E1D1B;
+  --ok:#6FCBA4;
+  --code-bg:#1D2620;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+}
+
+*{box-sizing:border-box;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  line-height:1.62;
+  font-size:16px;
+}
+h1,h2,h3,h4{
+  font-family:"IBM Plex Serif", Georgia, serif;
+  color:var(--ink);
+  text-wrap:balance;
+  line-height:1.24;
+  font-weight:600;
+}
+code, .mono, table.fields td:first-child, .field, kbd{
+  font-family:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+a{color:var(--accent-ink);}
+::selection{background:var(--accent-soft-border);}
+
+.shell{
+  display:flex;
+  max-width:1320px;
+  margin:0 auto;
+}
+.side{
+  position:sticky;
+  top:0;
+  align-self:flex-start;
+  height:100vh;
+  overflow-y:auto;
+  width:272px;
+  flex:none;
+  padding:28px 18px 40px 24px;
+  border-right:1px solid var(--border);
+}
+.side::-webkit-scrollbar{width:8px;}
+.side::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+
+.brand{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  margin-bottom:22px;
+  padding-bottom:18px;
+  border-bottom:1px solid var(--border);
+}
+.brand .mark{
+  font-family:"IBM Plex Serif";
+  font-weight:700;
+  font-size:1.15rem;
+  letter-spacing:0.01em;
+  color:var(--accent-ink);
+}
+.brand .tag{
+  font-size:0.74rem;
+  color:var(--ink-muted);
+  font-style:italic;
+}
+.brand .doctype{
+  margin-top:8px;
+  font-size:0.68rem;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+}
+
+nav.toc{
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+}
+nav.toc a{
+  color:var(--ink-muted);
+  text-decoration:none;
+  font-size:0.83rem;
+  padding:6px 8px;
+  border-radius:6px;
+  display:flex;
+  gap:8px;
+}
+nav.toc a:hover{background:var(--surface-2);color:var(--ink);}
+nav.toc a .n{
+  font-family:"IBM Plex Mono";
+  color:var(--ink-faint);
+  font-size:0.75rem;
+  min-width:1.4em;
+}
+
+main{
+  flex:1;
+  min-width:0;
+  padding:48px 56px 120px;
+}
+.masthead{
+  padding-bottom:36px;
+  margin-bottom:44px;
+  border-bottom:2px solid var(--ink);
+}
+.masthead .eyebrow{
+  font-size:0.76rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--accent-ink);
+  font-weight:600;
+  margin-bottom:10px;
+}
+.masthead h1{
+  font-size:2.4rem;
+  margin:0 0 8px;
+}
+.masthead .sub{
+  font-size:1.05rem;
+  color:var(--ink-muted);
+  max-width:60ch;
+}
+.masthead .meta{
+  margin-top:20px;
+  display:flex;
+  gap:22px;
+  flex-wrap:wrap;
+  font-size:0.78rem;
+  color:var(--ink-faint);
+}
+.masthead .meta b{color:var(--ink-muted);font-weight:600;}
+
+section.doc{
+  max-width:78ch;
+  margin-bottom:56px;
+  scroll-margin-top:24px;
+}
+section.doc .kicker{
+  font-family:"IBM Plex Mono";
+  font-size:0.78rem;
+  color:var(--accent-ink);
+  letter-spacing:0.04em;
+  margin-bottom:6px;
+}
+section.doc h2{
+  font-size:1.55rem;
+  margin:0 0 18px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+section.doc h3{
+  font-size:1.12rem;
+  margin:28px 0 10px;
+}
+section.doc h4{
+  font-size:0.95rem;
+  margin:20px 0 8px;
+  color:var(--ink-muted);
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  font-family:"IBM Plex Sans";
+  font-weight:600;
+}
+p{margin:0 0 14px;max-width:74ch;}
+ul,ol{margin:0 0 14px;padding-left:1.3em;}
+li{margin-bottom:5px;}
+strong{font-weight:600;}
+
+.callout{
+  border-left:3px solid var(--accent);
+  background:var(--accent-soft);
+  border-radius:0 8px 8px 0;
+  padding:14px 18px;
+  margin:18px 0;
+  font-size:0.94rem;
+}
+.callout .label{
+  font-family:"IBM Plex Mono";
+  font-size:0.7rem;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--accent-ink);
+  font-weight:600;
+  margin-bottom:6px;
+  display:block;
+}
+.callout p:last-child{margin-bottom:0;}
+.callout.challenge{
+  border-left-color:var(--warn);
+  background:var(--warn-soft);
+}
+.callout.challenge .label{color:var(--warn);}
+.callout.risk{
+  border-left-color:var(--danger);
+  background:var(--danger-soft);
+}
+.callout.risk .label{color:var(--danger);}
+
+.tablewrap{overflow-x:auto;margin:18px 0;border:1px solid var(--border);border-radius:8px;}
+table{
+  border-collapse:collapse;
+  width:100%;
+  font-size:0.87rem;
+  min-width:520px;
+}
+table caption{
+  text-align:left;
+  font-size:0.78rem;
+  color:var(--ink-faint);
+  padding:8px 12px;
+}
+th, td{
+  text-align:left;
+  padding:9px 13px;
+  border-bottom:1px solid var(--border);
+  vertical-align:top;
+}
+thead th{
+  background:var(--surface-2);
+  font-family:"IBM Plex Sans";
+  font-weight:600;
+  font-size:0.76rem;
+  text-transform:uppercase;
+  letter-spacing:0.03em;
+  color:var(--ink-muted);
+}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--surface-2);}
+td code{background:var(--code-bg);padding:1px 5px;border-radius:4px;font-size:0.82rem;}
+
+.badge{
+  display:inline-block;
+  font-family:"IBM Plex Mono";
+  font-size:0.68rem;
+  padding:2px 7px;
+  border-radius:99px;
+  border:1px solid var(--border);
+  color:var(--ink-muted);
+  white-space:nowrap;
+}
+.badge.yes{background:var(--accent-soft);border-color:var(--accent-soft-border);color:var(--accent-ink);}
+.badge.no{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);}
+.badge.own{background:var(--warn-soft);border-color:var(--warn-soft-border);color:var(--warn);}
+
+.diagram{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:18px;
+  margin:18px 0;
+  box-shadow:var(--shadow);
+  overflow-x:auto;
+}
+.diagram figcaption{
+  font-size:0.78rem;
+  color:var(--ink-faint);
+  margin-top:10px;
+  text-align:center;
+}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0;}
+.card{
+  border:1px solid var(--border);
+  background:var(--surface);
+  border-radius:10px;
+  padding:16px 18px;
+}
+.card h4{margin-top:0;}
+
+.adr{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:18px 20px;
+  margin:16px 0;
+  background:var(--surface);
+}
+.adr .adrhead{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:12px;
+  margin-bottom:10px;
+}
+.adr .adrhead h4{margin:0;text-transform:none;color:var(--ink);font-size:1.02rem;letter-spacing:0;font-family:"IBM Plex Serif";font-weight:600;}
+.adr .decision{
+  font-family:"IBM Plex Mono";
+  font-size:0.72rem;
+  color:var(--accent-ink);
+  background:var(--accent-soft);
+  border:1px solid var(--accent-soft-border);
+  padding:2px 9px;
+  border-radius:99px;
+  white-space:nowrap;
+}
+.adr dl{display:grid;grid-template-columns:120px 1fr;gap:6px 14px;margin:0;font-size:0.9rem;}
+.adr dt{color:var(--ink-faint);font-size:0.76rem;text-transform:uppercase;letter-spacing:0.04em;padding-top:2px;}
+.adr dd{margin:0;}
+
+.phase{
+  border-left:2px solid var(--border);
+  padding:2px 0 2px 20px;
+  position:relative;
+  margin-bottom:2px;
+}
+.phase::before{
+  content:"";
+  position:absolute;
+  left:-5px;
+  top:6px;
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--accent);
+}
+
+footer.doc{
+  max-width:78ch;
+  padding-top:24px;
+  border-top:1px solid var(--border);
+  color:var(--ink-faint);
+  font-size:0.8rem;
+}
+
+@media (max-width: 900px){
+  .side{display:none;}
+  main{padding:32px 20px 90px;}
+  .masthead h1{font-size:1.9rem;}
+  .grid2{grid-template-columns:1fr;}
+  .adr dl{grid-template-columns:100px 1fr;}
+}
+</style>
+
+<div class="shell">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark">TAKAFLOW</span>
+      <span class="tag">Turning Waste Into Worth</span>
+      <span class="doctype">Architecture Blueprint · v0.1 Draft</span>
+    </div>
+    <nav class="toc">
+      <a href="#s1"><span class="n">01</span>Executive Summary</a>
+      <a href="#s2"><span class="n">02</span>Requirements Analysis</a>
+      <a href="#s3"><span class="n">03</span>High-Level Architecture</a>
+      <a href="#s4"><span class="n">04</span>System Diagram</a>
+      <a href="#s5"><span class="n">05</span>Four Interfaces</a>
+      <a href="#s6"><span class="n">06</span>Roles &amp; Permissions</a>
+      <a href="#s7"><span class="n">07</span>Module Breakdown</a>
+      <a href="#s8"><span class="n">08</span>Database Architecture</a>
+      <a href="#s9"><span class="n">09</span>ERD</a>
+      <a href="#s10"><span class="n">10</span>Offline-First</a>
+      <a href="#s11"><span class="n">11</span>Inventory</a>
+      <a href="#s12"><span class="n">12</span>Buyer Matching</a>
+      <a href="#s13"><span class="n">13</span>Predictive Analytics</a>
+      <a href="#s14"><span class="n">14</span>API Architecture</a>
+      <a href="#s15"><span class="n">15</span>Frontend Architecture</a>
+      <a href="#s16"><span class="n">16</span>Backend Architecture</a>
+      <a href="#s17"><span class="n">17</span>Repo Structure</a>
+      <a href="#s18"><span class="n">18</span>Security</a>
+      <a href="#s19"><span class="n">19</span>Testing Strategy</a>
+      <a href="#s20"><span class="n">20</span>Deployment</a>
+      <a href="#s21"><span class="n">21</span>Roadmap</a>
+      <a href="#s22"><span class="n">22</span>MVP vs Future</a>
+      <a href="#s23"><span class="n">23</span>Risks</a>
+      <a href="#s24"><span class="n">24</span>ADR</a>
+      <a href="#s25"><span class="n">25</span>Contradictions</a>
+      <a href="#s26"><span class="n">26</span>Final Architecture</a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="masthead">
+      <div class="eyebrow">Pre-Implementation Review · Do Not Build</div>
+      <h1>TAKAFLOW Architecture Blueprint</h1>
+      <p class="sub">A system that keeps recyclable-material inventory <strong>correct</strong> when it's recorded on devices that lose connectivity for hours and reconcile later. That correctness problem — not the number of screens — is the technical core of this project; everything else (portals, matching, reporting) is business context around it.</p>
+      <div class="meta">
+        <span><b>Prepared for</b> Final-Year CS Project</span>
+        <span><b>Status</b> Reframed after review — see §25 for resolved decisions</span>
+        <span><b>Real timeline</b> 2 weeks total (1 build, 1 test) — drives the MVP in §22</span>
+        <span><b>Core scope</b> Offline-safe collection recording + ledger · thin admin view</span>
+      </div>
+    </div>
+
+    <section class="doc" id="s1">
+      <div class="kicker">§01</div>
+      <h2>Executive Summary</h2>
+      <div class="callout">
+        <span class="label">Reframed thesis (post-review)</span>
+        <p>Early feedback on this project was blunt and fair: as a list of features — registration forms, portals, a marketing site — this reads like a business idea, something a non-technical founder could commission from any agency. That critique lands on the parts of the brief that <em>are</em> ordinary CRUD. It doesn't land on the one requirement that ordinary CRUD cannot satisfy: recording collections on a device that may be offline for hours, then reconciling those records into a shared inventory count without ever double-counting, losing an entry, or letting it go negative. That is a real correctness problem under concurrency and unreliable connectivity, and it is the thing this project is actually about. Every section below still designs the full system honestly, but §22 now organizes priorities around that thesis explicitly, and the defense narrative should lead with it, not with the interface count.</p>
+      </div>
+      <p>TAKAFLOW is architecturally sound as proposed, with one caveat that matters more than any technology choice: <strong>the scope, as written, is closer to a small startup's first product than a two-week build.</strong> Four distinct interfaces, offline-first sync, a matching engine, and a forecasting pipeline are each individually reasonable. Attempted together, in the time actually available, they are not. This document designs the full system honestly — because a good architecture has to account for everything the system will eventually need — and then draws a hard, explicit line in §22 between what ships now and what is documented as future work. That line is the single most important decision in this blueprint.</p>
+      <p>The proposed technology stack (React/TypeScript/Vite/Tailwind, FastAPI, PostgreSQL/SQLAlchemy, PWA/IndexedDB, scikit-learn) is kept almost entirely as-is. It is a competent, defensible, well-documented stack for exactly this kind of system, and changing it for the sake of using something more fashionable would be bad engineering. The changes recommended are narrow: a data-access library on top of raw IndexedDB, an explicit event-sourced inventory ledger instead of a single mutable counter, and a monorepo with shared packages instead of four unrelated codebases.</p>
+      <p>The database, as sketched in the brief, would work for a demo but would silently corrupt itself under real concurrent use — specifically around inventory counting and purchase-rate history. §8–§11 redesign those parts. Everything else in the brief's starting schema is a reasonable first draft that this document refines rather than replaces.</p>
+    </section>
+
+    <section class="doc" id="s2">
+      <div class="kicker">§02</div>
+      <h2>Requirements Analysis</h2>
+      <p>Before designing anything, it's worth separating what the brief actually requires from what it merely illustrates. Three principles run through the whole document and should be treated as load-bearing:</p>
+      <ol>
+        <li><strong>Centralization</strong> — one backend, one database, one identity system, regardless of how many frontends exist.</li>
+        <li><strong>Offline-first collection recording</strong> — the collection-point app must function as a local-first application with eventual consistency, not a thin client that happens to cache a bit.</li>
+        <li><strong>Predictive analytics as the only "intelligence"</strong> — explicitly not computer vision, IoT, or blockchain. This is a helpful constraint: it keeps the ML component honest and scoped to tabular time-series forecasting on operational data that already exists.</li>
+      </ol>
+      <p>The brief also states several things as illustrative ("possible starting fields", "example endpoint groups", "a possible sequence") rather than fixed requirements, and explicitly invites disagreement. This document exercises that invitation throughout — each major section either adopts, adapts, or explicitly rejects the starting suggestion, with reasoning.</p>
+      <div class="callout">
+        <span class="label">Implicit assumption · Confirmed (§25 item 3)</span>
+        <p>The brief assumes collection points are fixed physical premises with intermittent but eventually-restored connectivity (a branch office, not a person walking around with a phone and no signal for days). This assumption drives the offline-sync design in §10. Confirmed: collection is branch-based, not field-agent-based, so the desktop/tablet storage-quota and background-sync assumptions in §10 stand as designed.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="s3">
+      <div class="kicker">§03</div>
+      <h2>High-Level Architecture</h2>
+      <p>TAKAFLOW is a single centralized system exposed through multiple purpose-built clients. There is one FastAPI service, one PostgreSQL database, and one authentication domain. The four interfaces are different <em>presentations</em> of the same backend, not four separate products that happen to share a name.</p>
+      <ul>
+        <li><strong>Public Website</strong> — mostly static/server-rendered marketing content, reading a small amount of public data (collection points, materials, impact stats) from the API. No authentication.</li>
+        <li><strong>Collection-Point PWA</strong> — an installable, offline-capable single-page app used by branch staff. Authenticated. Writes flow through a local-first sync engine before reaching the backend.</li>
+        <li><strong>Admin Portal</strong> — a standard authenticated SPA for management, configuration, and analytics. No offline requirement.</li>
+        <li><strong>Buyer Portal</strong> — a standard authenticated SPA for industrial buyers. No offline requirement.</li>
+      </ul>
+      <p>A single ML/analytics component runs out-of-band from the request/response cycle: a scheduled batch job reads from PostgreSQL, trains/refreshes forecasting models, and writes predictions back into the same database, where the API simply reads them like any other table. The model does not run inline on user requests — this keeps the web tier simple and the ML tier independently testable.</p>
+    </section>
+
+    <section class="doc" id="s4">
+      <div class="kicker">§04</div>
+      <h2>System Architecture Diagram</h2>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart TB
+    subgraph CLIENTS["Client Layer"]
+        PUB["Public Website<br/>(SSR/static, no auth)"]
+        CPPWA["Collection-Point PWA<br/>(offline-first, IndexedDB)"]
+        ADMIN["Admin Portal<br/>(authenticated SPA)"]
+        BUYER["Buyer Portal<br/>(authenticated SPA)"]
+    end
+
+    subgraph EDGE["Edge"]
+        NGINX["Reverse proxy / TLS<br/>rate limiting"]
+    end
+
+    subgraph API["FastAPI Application"]
+        AUTH["Auth &amp; RBAC"]
+        ROUTERS["Routers: collections, inventory,\nsuppliers, buyers, requests,\ntransfers, predictions, sync"]
+        SERVICES["Service layer\n(business rules, inventory ledger,\nmatching, idempotency)"]
+    end
+
+    subgraph DATA["Data Layer"]
+        PG[("PostgreSQL")]
+    end
+
+    subgraph ML["ML / Analytics (offline batch)"]
+        JOB["Scheduled training &amp; forecast job\n(pandas / scikit-learn)"]
+    end
+
+    PUB -- "public read-only REST" --> NGINX
+    CPPWA -- "REST + batched sync" --> NGINX
+    ADMIN -- "REST" --> NGINX
+    BUYER -- "REST" --> NGINX
+    NGINX --> AUTH --> ROUTERS --> SERVICES --> PG
+    JOB -- "reads history" --> PG
+    JOB -- "writes predictions" --> PG
+
+    CPPWA -.->|"IndexedDB\n(outbox, offline reads)"| CPPWA
+</pre>
+        <figcaption>Fig. 1 — One backend and one database behind four clients. The collection-point PWA is the only client with a local persistence layer; everything else is a conventional stateless SPA.</figcaption>
+      </div>
+    </section>
+
+    <section class="doc" id="s5">
+      <div class="kicker">§05</div>
+      <h2>Four-Interface Architecture</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Interface</th><th>Auth</th><th>Rendering</th><th>Offline</th><th>Primary concern</th></tr></thead>
+          <tbody>
+            <tr><td>Public Website</td><td>None</td><td>Static-generated / lightly SSR'd</td><td>No</td><td>SEO, load speed, credibility</td></tr>
+            <tr><td>Collection-Point App</td><td>Staff login</td><td>Client-rendered PWA</td><td><strong>Required</strong></td><td>Speed of data entry, reliability without signal</td></tr>
+            <tr><td>Admin Portal</td><td>Admin login</td><td>Client-rendered SPA</td><td>No</td><td>Breadth of data, correctness of reports</td></tr>
+            <tr><td>Buyer Portal</td><td>Buyer login</td><td>Client-rendered SPA</td><td>No</td><td>Clarity of actual vs. predicted availability</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>These four have genuinely different non-functional requirements — this is the central argument for the frontend architecture decision in §15 (separate apps, shared packages, one repo). Bundling offline/service-worker machinery into the marketing site, or a Tailwind marketing theme into the offline app, would compromise both.</p>
+    </section>
+
+    <section class="doc" id="s6">
+      <div class="kicker">§06</div>
+      <h2>User Roles &amp; Permissions</h2>
+      <p>Three roles are sufficient for this system's actual complexity. A full many-to-many ROLE/PERMISSION schema (as real RBAC systems use) would be over-engineering for three roles with stable responsibilities — it's designed for organizations that invent new roles at runtime, which TAKAFLOW does not need. Enforce permissions in a small, explicit policy table in code, backed by a single <code>role</code> enum column on <code>USER</code>. The schema stays extensible (see §25) if that ever changes.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Capability</th><th>Administrator</th><th>Collection-Point Staff</th><th>Industrial Buyer</th></tr></thead>
+          <tbody>
+            <tr><td>Manage users, roles, employees</td><td><span class="badge yes">Full</span></td><td><span class="badge no">No</span></td><td><span class="badge no">No</span></td></tr>
+            <tr><td>Configure materials, rates, collection points</td><td><span class="badge yes">Full</span></td><td><span class="badge no">Read own point</span></td><td><span class="badge no">No</span></td></tr>
+            <tr><td>Record collection transactions (walk-in, no registration)</td><td><span class="badge no">View only</span></td><td><span class="badge own">Own point</span></td><td><span class="badge no">No</span></td></tr>
+            <tr><td>View inventory</td><td><span class="badge yes">All branches</span></td><td><span class="badge own">Own point</span></td><td><span class="badge own">Aggregate, available-only</span></td></tr>
+            <tr><td>Company-wide dashboards &amp; reports</td><td><span class="badge yes">Full</span></td><td><span class="badge no">No</span></td><td><span class="badge no">No</span></td></tr>
+            <tr><td>Submit / track buyer requests</td><td><span class="badge yes">View all</span></td><td><span class="badge no">No</span></td><td><span class="badge own">Own requests</span></td></tr>
+            <tr><td>Approve / process transfers</td><td><span class="badge yes">Full</span></td><td><span class="badge own">Dispatch from own point</span></td><td><span class="badge no">No</span></td></tr>
+            <tr><td>View predictions</td><td><span class="badge yes">All</span></td><td><span class="badge own">Own point</span></td><td><span class="badge own">Materials relevant to own requests</span></td></tr>
+            <tr><td>System settings, audit log</td><td><span class="badge yes">Full</span></td><td><span class="badge no">No</span></td><td><span class="badge no">No</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Enforcement happens twice: FastAPI dependency-injected guards reject unauthorized requests server-side (the only enforcement that actually matters), and the frontends hide controls the user can't use, purely for usability. Every collection-point-scoped action additionally checks that the authenticated staff member's <code>collection_point_id</code> matches the resource being touched — row-level scoping, not just role-level.</p>
+    </section>
+
+    <section class="doc" id="s7">
+      <div class="kicker">§07</div>
+      <h2>Module Breakdown</h2>
+      <div class="grid2">
+        <div class="card">
+          <h4>Core domain modules</h4>
+          <ul>
+            <li>Identity &amp; Access (users, roles, sessions)</li>
+            <li>Collection Points &amp; Materials (incl. per-point acceptance &amp; rates)</li>
+            <li>Collection Transactions (walk-in collector details captured inline — see §25 item 7)</li>
+            <li>Payments</li>
+            <li>Inventory (ledger + summary)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Cross-cutting / secondary modules</h4>
+          <ul>
+            <li>Sync Engine (offline outbox intake)</li>
+            <li>Buyers &amp; Buyer Requests</li>
+            <li>Matching &amp; Transfers</li>
+            <li>Predictive Analytics</li>
+            <li>Reporting &amp; Dashboards</li>
+            <li>Audit Logging &amp; System Settings</li>
+          </ul>
+        </div>
+      </div>
+      <p>Each module owns its own router, schemas, service, and (where needed) repository functions in the backend — see §16. No module reaches directly into another module's tables except through its service functions; e.g. Matching calls the Inventory service's <code>get_available_quantity()</code> rather than querying the inventory table itself.</p>
+    </section>
+
+    <section class="doc" id="s8">
+      <div class="kicker">§08</div>
+      <h2>Database Architecture</h2>
+      <p>The brief's starting entities are a good sketch. Three structural gaps would cause real problems if built as-is, and are corrected here before anything else:</p>
+      <div class="callout challenge">
+        <span class="label">Challenge 1 — a single mutable <code>quantity_available</code> is not enough</span>
+        <p>Directly incrementing/decrementing one column from multiple concurrent writers (collections arriving, transfers going out, offline sync catching up hours later) is exactly the pattern that produces double-counting and negative inventory under concurrency — the two failure modes the brief explicitly wants avoided. §11 replaces this with an append-only <strong>inventory ledger</strong> plus a derived summary row, which is both safer and auditable — an examiner will ask how you know your inventory numbers are correct, and "we have a ledger" is a real answer.</p>
+      </div>
+      <div class="callout challenge">
+        <span class="label">Challenge 2 — purchase rate cannot be a single field on MATERIAL</span>
+        <p>The brief lists <code>purchase_rate</code> as a field directly on <code>MATERIAL</code>. But a transaction must record the rate that was actually applied at that moment, at that branch — and rates change over time and plausibly differ by branch. A single mutable field loses history the instant it's overwritten. This is replaced with a <code>MATERIAL_RATE</code> history table below.</p>
+      </div>
+      <div class="callout challenge">
+        <span class="label">Challenge 3 — "materials accepted per collection point" needs its own table</span>
+        <p>The public site must show "materials accepted at each collection point" (§1) and rates can vary by branch. Both require a many-to-many join between <code>COLLECTION_POINT</code> and <code>MATERIAL</code>, which isn't in the brief's starting list.</p>
+      </div>
+
+      <h3>Final entity list</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Entity</th><th>Change from brief</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>user</code></td><td>kept, +<code>last_login_at</code></td><td>All authenticated principals</td></tr>
+            <tr><td><code>collection_point</code></td><td>kept, +<code>latitude</code>/<code>longitude</code>, +<code>opening_hours</code></td><td>Physical branches</td></tr>
+            <tr><td><code>material</code></td><td><strong>rate removed</strong> (moved out)</td><td>Configurable material catalogue</td></tr>
+            <tr><td><code>collection_point_material</code></td><td><strong>new</strong></td><td>Which materials a branch accepts (public site source of truth)</td></tr>
+            <tr><td><code>material_rate</code></td><td><strong>new</strong> (replaces flat field)</td><td>Time- and branch-scoped purchase-rate history</td></tr>
+            <tr><td><code>supplier</code></td><td><strong>removed</strong> — no registration exists (§25 item 7)</td><td>—</td></tr>
+            <tr><td><code>collection_transaction</code></td><td>kept, <code>client_transaction_uuid</code> UNIQUE NOT NULL, +<code>material_rate_id</code> FK, +nullable <code>collector_name</code>, <code>collector_phone</code>, <code>grade</code></td><td>Immutable record of one delivery, incl. optional walk-in collector details and material grade</td></tr>
+            <tr><td><code>payment</code></td><td>FK made one-to-many (a transaction may need &gt;1 payment record)</td><td>Payout to supplier</td></tr>
+            <tr><td><code>inventory_ledger</code></td><td><strong>new</strong> (replaces mutable model)</td><td>Append-only movement history — the source of truth</td></tr>
+            <tr><td><code>inventory_summary</code></td><td><strong>new</strong> (was <code>INVENTORY</code>)</td><td>Fast-read materialized balance per point+material</td></tr>
+            <tr><td><code>buyer</code></td><td>kept</td><td>Organization profile</td></tr>
+            <tr><td><code>buyer_request</code></td><td>kept, +<code>fulfilled_quantity</code> (derived, cached)</td><td>Demand submitted by a buyer</td></tr>
+            <tr><td><code>material_transfer</code></td><td>kept, +<code>transfer_type</code>, +<code>destination_collection_point_id</code> (nullable, for inter-branch)</td><td>Outbound movement, request-linked or internal</td></tr>
+            <tr><td><code>prediction</code></td><td>kept, +<code>mae</code>/<code>rmse</code>, +<code>is_demo_data</code></td><td>Forecast output</td></tr>
+            <tr><td><code>device</code></td><td><strong>new</strong></td><td>Identifies which physical device/session created offline records</td></tr>
+            <tr><td><code>sync_log</code></td><td>kept, <code>device_id</code> now FK</td><td>Per-attempt sync audit trail</td></tr>
+            <tr><td><code>audit_log</code></td><td><strong>new</strong></td><td>Admin/config change trail (distinct from sync — see §18)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Key constraints worth stating explicitly</h4>
+      <ul>
+        <li><code>collection_transaction.client_transaction_uuid</code> — <code>UNIQUE, NOT NULL</code>. This single constraint is what makes offline sync idempotent (§10).</li>
+        <li><code>inventory_summary</code> — unique on <code>(collection_point_id, material_id)</code>; <code>CHECK (quantity_on_hand &gt;= 0)</code> and <code>CHECK (quantity_reserved &gt;= 0)</code>.</li>
+        <li><code>collection_point_material</code> — unique on <code>(collection_point_id, material_id)</code>.</li>
+        <li><code>material_rate</code> — for a given <code>(material_id, collection_point_id)</code>, at most one row with <code>effective_to IS NULL</code> (open-ended/current rate) enforced by a partial unique index.</li>
+      </ul>
+      <div class="callout challenge">
+        <span class="label">Change — no supplier registration or identity (§25 item 7)</span>
+        <p>Confirmed: collectors are not registered and do not need to be identifiable across visits — anyone, including someone with no phone or ID, can bring material, have it graded and weighed by staff, and be paid on the spot. There is therefore no <code>supplier</code> entity, no identifier-uniqueness constraint to satisfy, and no registration/search screen. <code>collector_name</code> and <code>collector_phone</code> become plain nullable text fields on <code>collection_transaction</code> — captured for the payment/dispute record only, never deduplicated or used to build a persistent identity. If repeat-supplier tracking or self-service accounts become worth doing later, that reintroduces a proper <code>supplier</code> entity as a schema migration, not a redesign — nothing here blocks it.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="s9">
+      <div class="kicker">§09</div>
+      <h2>ERD Description</h2>
+      <div class="diagram">
+<pre class="mermaid">
+erDiagram
+    USER ||--o| BUYER : "owns profile"
+    USER ||--o{ COLLECTION_TRANSACTION : "recorded by"
+
+    COLLECTION_POINT ||--o{ COLLECTION_POINT_MATERIAL : accepts
+    MATERIAL ||--o{ COLLECTION_POINT_MATERIAL : "accepted at"
+
+    COLLECTION_POINT ||--o{ MATERIAL_RATE : "may override"
+    MATERIAL ||--o{ MATERIAL_RATE : "priced by"
+
+    COLLECTION_POINT ||--o{ COLLECTION_TRANSACTION : receives
+    MATERIAL ||--o{ COLLECTION_TRANSACTION : "is of"
+    MATERIAL_RATE ||--o{ COLLECTION_TRANSACTION : "rate applied"
+    COLLECTION_TRANSACTION ||--o{ PAYMENT : "paid via"
+
+    COLLECTION_TRANSACTION ||--|| INVENTORY_LEDGER : "generates entry"
+    MATERIAL_TRANSFER ||--|| INVENTORY_LEDGER : "generates entry"
+    COLLECTION_POINT ||--o{ INVENTORY_LEDGER : "at"
+    MATERIAL ||--o{ INVENTORY_LEDGER : "of"
+    COLLECTION_POINT ||--o{ INVENTORY_SUMMARY : "balance at"
+    MATERIAL ||--o{ INVENTORY_SUMMARY : "balance of"
+
+    BUYER ||--o{ BUYER_REQUEST : submits
+    MATERIAL ||--o{ BUYER_REQUEST : requests
+    BUYER_REQUEST ||--o{ MATERIAL_TRANSFER : fulfilled_by
+    COLLECTION_POINT ||--o{ MATERIAL_TRANSFER : "sourced from"
+
+    COLLECTION_POINT ||--o{ PREDICTION : forecasts
+    MATERIAL ||--o{ PREDICTION : forecasts
+
+    DEVICE ||--o{ COLLECTION_TRANSACTION : "originated on"
+    DEVICE ||--o{ SYNC_LOG : "attempts from"
+    USER ||--o{ AUDIT_LOG : performs
+</pre>
+        <figcaption>Fig. 2 — Logical ERD. Full field lists per entity are in §08; this diagram shows cardinality and relationship intent only.</figcaption>
+      </div>
+      <p><strong>Notable cardinalities:</strong> a <code>COLLECTION_TRANSACTION</code> is immutable and generates exactly one <code>INVENTORY_LEDGER</code> entry (append, never edit — corrections are reversing entries, not updates, preserving the audit trail). A <code>BUYER_REQUEST</code> can be satisfied by <em>multiple</em> <code>MATERIAL_TRANSFER</code> rows from different collection points (partial/multi-branch fulfillment, §12). There is no <code>SUPPLIER</code> entity at all — collectors are walk-ins with no registration or persistent identity (§25 item 7); <code>collector_name</code>/<code>collector_phone</code> live directly on <code>COLLECTION_TRANSACTION</code> as optional record-keeping fields.</p>
+    </section>
+
+    <section class="doc" id="s10">
+      <div class="kicker">§10</div>
+      <h2>Offline-First Architecture</h2>
+      <p><strong>Stack decision:</strong> PWA + IndexedDB is kept, but not raw IndexedDB — wrap it with <strong>Dexie.js</strong>. Raw IndexedDB's callback/cursor API is exactly the kind of hand-rolled complexity that turns into unmaintainable code in a student project; Dexie gives promise-based queries and versioned schema migrations over the same browser API, at negligible cost.</p>
+
+      <h3>Data model on-device</h3>
+      <ul>
+        <li><strong>outbox</strong> store — one row per not-yet-confirmed transaction: <code>{ client_transaction_uuid, payload, status, attempts, last_error, created_at }</code>.</li>
+        <li><strong>reference cache</strong> — read-only mirror of materials, rates, and the employee's own collection point, refreshed opportunistically whenever online, so the form works fully offline.</li>
+        <li><strong>local history</strong> — recently synced transactions, cached for the "today's collections" view without a network round trip.</li>
+      </ul>
+
+      <h3>Lifecycle</h3>
+      <div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+    [*] --> PENDING: crypto.randomUUID()\nsaved to outbox
+    PENDING --> SYNCING: connectivity detected\nor manual "Sync now"
+    SYNCING --> SYNCED: server accepts\n(2xx, UUID recorded)
+    SYNCING --> FAILED: network drop / 5xx
+    FAILED --> SYNCING: retry, exponential backoff
+    SYNCING --> CONFLICT: server rejects\n(stale material/rate reference)
+    CONFLICT --> [*]: staff/admin resolves manually
+    SYNCED --> [*]
+</pre>
+        <figcaption>Fig. 3 — Sync state machine per transaction. Note there is no "edit" transition: a synced collection record is never mutated, only reversed by a new, separately-audited correcting entry.</figcaption>
+      </div>
+
+      <h4>Answers to the brief's specific scenarios</h4>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Scenario</th><th>Behavior</th></tr></thead>
+          <tbody>
+            <tr><td>Browser/tab closed with pending records</td><td>IndexedDB is durable storage; nothing is lost. <code>navigator.storage.persist()</code> is requested on first login to reduce eviction risk under storage pressure.</td></tr>
+            <tr><td>Connection drops mid-sync</td><td>The sync endpoint accepts a <em>batch</em> but processes each transaction independently and returns a per-record result array. A dropped connection simply leaves whatever didn't get an acknowledged response as <code>PENDING</code> for the next attempt — never a half-applied batch.</td></tr>
+            <tr><td>Same transaction submitted twice (double-tap, retry after timeout)</td><td>The client-generated UUID is the idempotency key. The server has a <code>UNIQUE</code> constraint on it; a duplicate insert is caught and answered with the <em>original</em> record's server ID as a 200, not an error — the client treats this as success.</td></tr>
+            <tr><td>Trigger for sync attempts</td><td><code>online</code>/<code>offline</code> browser events, a periodic timer (~30s) while the tab is open, and a manual "Sync now" button. Background Sync API is used opportunistically where supported (Chromium) but is never relied on as the only trigger, because Safari/iOS support is unreliable.</td></tr>
+            <tr><td>Retry strategy</td><td>Exponential backoff (5s, 15s, 60s, capped at 5 min) per record, independent per record so one bad record doesn't block others.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>What "conflict" actually means here</h3>
+      <p>Because collection transactions are creates, not edits, there is no field-level merge conflict to resolve — the brief's classic "two users edited the same row" scenario doesn't apply. The real conflict case is <strong>stale reference data</strong>: an employee selects a material or rate while offline, and by the time the record syncs hours later, an admin has deactivated that material or superseded that rate. The server rejects with a distinguishable <code>CONFLICT</code> reason, the record is flagged for the branch supervisor to review (never silently dropped or silently auto-corrected), and it's resolved by picking the correct current material/rate and resubmitting — a human decision, not an automatic merge.</p>
+
+      <div class="callout">
+        <span class="label">Demo plan · Confirmed</span>
+        <p>The correctness demo (§01, §26) is done practically live, not narrated or scripted around devtools throttling: on the actual device, switch it to airplane mode, record 2–3 collections while offline (shown queued in the outbox UI), attempt a duplicate submit to show the idempotency key catch it, re-enable connectivity, and watch the queue drain and the admin view's inventory update to the correct total. No special "chaos mode" feature is needed for this — it exercises the real <code>online</code>/<code>offline</code> browser events and sync engine described above, so the only extra work is making sure those states are visibly surfaced in the collection-app UI (a small outbox/sync-status indicator) and rehearsing the script.</p>
+      </div>
+      <div class="callout">
+        <span class="label">Architect's note — storage limits</span>
+        <p>Confirm the assumption from §02: this design assumes desktop/tablet browsers at a fixed branch, where IndexedDB quotas (typically hundreds of MB to a few GB depending on browser/OS) are a non-issue for text-sized transaction records. If field staff on budget Android phones turn out to be in scope, storage-eviction behavior on mobile Chrome/Safari needs a second look before this is finalized.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="s11">
+      <div class="kicker">§11</div>
+      <h2>Inventory Architecture</h2>
+      <p>Recommended model: <strong>an append-only ledger is the source of truth; a summary table is a fast, transactionally-updated read cache of it.</strong> This is the single highest-leverage change in this whole document relative to the brief's starting design, because it directly targets every failure mode called out in §8 of the brief (double counting, negative inventory, duplicate updates, race conditions, offline-sync incorrectness) with one consistent mechanism instead of ad-hoc guards.</p>
+
+      <h3><code>inventory_ledger</code> (append-only)</h3>
+      <p><code>{ id, collection_point_id, material_id, movement_type, quantity_delta, reference_type, reference_id, created_at }</code> — <code>movement_type</code> ∈ <code>COLLECTION</code> (+), <code>TRANSFER_OUT</code> (−), <code>RESERVATION</code> (moves on-hand→reserved, net zero on-hand), <code>RESERVATION_RELEASE</code> (reverse of above), <code>ADJUSTMENT</code> (admin correction, requires a reason and is itself audit-logged).</p>
+
+      <h3><code>inventory_summary</code> (derived)</h3>
+      <p><code>{ collection_point_id, material_id, quantity_on_hand, quantity_reserved, updated_at }</code>, unique on the first two columns. Every write to the ledger and the corresponding update to the summary happen <strong>inside the same database transaction</strong>, using an atomic <code>UPDATE ... SET quantity_on_hand = quantity_on_hand + :delta</code> (never a read-then-write in application code), with a <code>CHECK</code> constraint preventing the balance from going negative. This is a simple, well-understood pattern (not full event-sourcing with state rebuilding) — appropriate for this scale, and it directly satisfies "avoid negative inventory" and "avoid race conditions" without needing application-level locking.</p>
+
+      <div class="callout">
+        <span class="label">Why not just SELECT ... FOR UPDATE with read-modify-write?</span>
+        <p>That also works and is a legitimate alternative, but an atomic single-statement increment is simpler to reason about, needs no explicit lock management, and is what the ledger pattern naturally produces. <code>SELECT FOR UPDATE</code> is mentioned here only as the fallback if a future movement type needs multi-row conditional logic that can't be expressed as one atomic increment.</p>
+      </div>
+
+      <h3>Reservation flow for buyer fulfillment</h3>
+      <p>When a transfer is proposed against a buyer request (§12), the system inserts a <code>RESERVATION</code> ledger entry, moving quantity from on-hand into reserved <em>before</em> physical dispatch — so two buyer requests can never both believe the same stock is available. If the transfer is cancelled before dispatch, a <code>RESERVATION_RELEASE</code> entry reverses it. On actual dispatch, a <code>TRANSFER_OUT</code> entry removes it from reserved permanently. Collections increase <code>quantity_on_hand</code> directly and never touch <code>quantity_reserved</code>.</p>
+
+      <p>Offline-synced collections post to the ledger at sync time (not at the moment the employee typed it), which is correct: the physical material didn't exist in the branch's countable inventory until it was actually verified and recorded, and using the sync timestamp (with the original transaction timestamp preserved separately for reporting) avoids inventory ever moving backward when a batch of offline records lands.</p>
+    </section>
+
+    <section class="doc" id="s12">
+      <div class="kicker">§12</div>
+      <h2>Buyer Request &amp; Matching Architecture</h2>
+      <p>The brief's status list is good with one addition: an <code>EXPIRED</code> state for requests whose <code>required_date</code> passes without fulfillment, so stale requests don't sit in <code>SUBMITTED</code> forever. Final lifecycle: <code>SUBMITTED → UNDER_REVIEW → PARTIALLY_FULFILLED → FULFILLED</code>, with <code>CANCELLED</code> and <code>EXPIRED</code> as terminal exits from any non-final state.</p>
+
+      <h3>Matching logic — deliberately simple</h3>
+      <p>The brief explicitly warns against unnecessary optimization complexity, which is the right call here: this is not a vehicle-routing problem. The matching service, when asked to evaluate a request, does the following, in order:</p>
+      <ol>
+        <li>Query <code>inventory_summary</code> for the requested material across all collection points, filtered to points with available (on-hand minus reserved) stock &gt; 0.</li>
+        <li>Rank candidate points by same-county match to <code>preferred_location</code> first, then by available quantity descending.</li>
+        <li>Greedily allocate from the top of that ranked list until the requested quantity is covered or supply is exhausted — this is the entire "algorithm": a sort and a running-total loop, not a solver.</li>
+        <li>If supply is exhausted before the request is covered, query the <code>prediction</code> table for the shortfall's remaining quantity, clearly labeled as a separate, non-guaranteed number (see below).</li>
+      </ol>
+      <p>Crucially, matching <strong>proposes</strong> an allocation; it does not automatically create transfers or reservations. Admin/staff review and confirm before any <code>RESERVATION</code> ledger entry is created — a human-in-the-loop step that removes the need for the algorithm to handle every edge case autonomously, and matches the brief's instruction to keep this realistic.</p>
+
+      <h3>Actual vs. predicted — enforced, not just displayed</h3>
+      <div class="callout">
+        <span class="label">Non-negotiable design rule</span>
+        <p>"Current available inventory" and "predicted additional availability" must never be summed into a single number returned by the same field. The API returns them as two distinct, separately-labeled values (<code>current_available_kg</code> and <code>predicted_available_kg</code> with the prediction's confidence interval), and the buyer-portal UI renders them in visually distinct blocks — never as one merged total. This is a contract enforced at the schema level (two separate response fields), not just a UI convention that could be silently violated later.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="s13">
+      <div class="kicker">§13</div>
+      <h2>Predictive Analytics Architecture</h2>
+      <h3>Pipeline</h3>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+    A["collection_transaction\n(synced, real data only)"] --> B["Aggregate to\nweekly buckets per\n(collection_point, material)"]
+    B --> C["Feature engineering:\nlags, rolling means,\nweek-of-year, trend"]
+    C --> D{"Enough history?\n(>= ~12 weeks)"}
+    D -- no --> E["Fallback: naive /\nmoving-average baseline\nflag as low-confidence"]
+    D -- yes --> F["Train &amp; time-based\nholdout split"]
+    F --> G["Compare: seasonal-naive,\nLinear Regression,\nRandom Forest, Gradient Boosting"]
+    G --> H["Select best by MAE/RMSE\non holdout"]
+    H --> I["Write to prediction table:\nvalue, interval, model_used,\nmae, generated_at"]
+    E --> I
+    I --> J["Admin dashboard /\nBuyer portal (labeled 'predicted')"]
+</pre>
+        <figcaption>Fig. 4 — Forecast pipeline. Runs as a scheduled offline job, not inline with any user request.</figcaption>
+      </div>
+      <ul>
+        <li><strong>Training data</strong> comes only from real, synced <code>collection_transaction</code> rows — never from seed/demo data. Any demo data used during development is generated with an explicit <code>is_demo_data</code> flag and is excluded from training queries by default.</li>
+        <li><strong>Validation split is chronological</strong>, not random — training on the past and testing on a later holdout window, because random splits leak future information into a time-series model and would produce misleadingly good metrics.</li>
+        <li><strong>Model selection is empirical</strong>: a seasonal-naive/moving-average baseline is always trained alongside Linear Regression, Random Forest, and Gradient Boosting; whichever wins on MAE/RMSE for that specific (point, material) series is what gets used — there is no assumption that a fancier model wins by default, and for a thin dataset the baseline will often legitimately win.</li>
+        <li><strong>Insufficient data</strong> (a new branch, a rarely-collected material) is handled by explicitly returning "insufficient historical data for a reliable forecast" rather than emitting a number with false confidence — this is a direct requirement from the brief and is enforced by a minimum-sample-size gate before any regression model is even attempted.</li>
+        <li><strong>Uncertainty</strong> is reported as a simple interval (e.g., ±1 residual standard deviation from the holdout, or the empirical range across the compared models) — adequate for "roughly how much more might become available," which is the actual decision this number supports.</li>
+      </ul>
+    </section>
+
+    <section class="doc" id="s14">
+      <div class="kicker">§14</div>
+      <h2>API Architecture</h2>
+      <p>REST, versioned under <code>/api/v1/</code> from day one (near-zero cost now, avoids a painful migration later). Grouped by domain, matching §07's modules: <code>/auth</code>, <code>/collection-points</code>, <code>/materials</code>, <code>/suppliers</code>, <code>/collections</code>, <code>/payments</code>, <code>/inventory</code>, <code>/buyers</code>, <code>/buyer-requests</code>, <code>/matching</code>, <code>/transfers</code>, <code>/predictions</code>, <code>/sync</code>, <code>/reports</code>.</p>
+      <ul>
+        <li><strong>Auth:</strong> JWT access token (short-lived, ~15 min) + rotating refresh token stored hashed server-side so it can be revoked; every protected route depends on a FastAPI dependency that decodes the token and loads the current user's role and scope.</li>
+        <li><strong>Authorization:</strong> a small per-route dependency (<code>require_role("admin")</code>, <code>require_own_collection_point()</code>) rather than checks scattered inside handler bodies.</li>
+        <li><strong>Schemas:</strong> separate Pydantic models for request bodies, response bodies, and internal DB-facing shapes — never return an ORM object directly.</li>
+        <li><strong>Validation:</strong> Pydantic field validation at the boundary (types, ranges, required fields); business-rule validation (e.g., "quantity can't exceed a sane branch-day maximum") lives in the service layer, not the schema.</li>
+        <li><strong>Errors:</strong> a consistent JSON error envelope (<code>{ "error": { "code", "message", "details" } }</code>) and correct HTTP status codes — 422 for validation, 409 for conflicts (rate/material staleness, duplicate UUID under non-idempotent conditions), 403 for authorization failures.</li>
+        <li><strong>Pagination/filtering/sorting:</strong> cursor or offset-based pagination (offset is fine at this scale) with consistent <code>?page=&amp;page_size=&amp;sort=&amp;filter[...]</code> conventions across every list endpoint.</li>
+        <li><strong>Idempotency:</strong> the sync endpoint is idempotent by design via <code>client_transaction_uuid</code> (§10); other mutating endpoints accept an optional <code>Idempotency-Key</code> header for the same reason where double-submission is a realistic risk (payments).</li>
+        <li><strong>Rate limiting:</strong> applied at the reverse-proxy layer on auth endpoints specifically, to blunt credential-stuffing attempts, per §18.</li>
+      </ul>
+    </section>
+
+    <section class="doc" id="s15">
+      <div class="kicker">§15</div>
+      <h2>Frontend Architecture</h2>
+      <p><strong>Decision: Option B — one monorepo, four separate applications, shared internal packages.</strong> Not Option A (one app with role-based sections): that would force offline/service-worker complexity onto the marketing site's bundle and force marketing/SEO concerns onto the authenticated apps, for no shared benefit — these four surfaces don't actually share screens, only components and types. Not Option C (separate repositories): for a project built and defended by one person (or a small team) on one timeline, splitting into separate repos multiplies CI/versioning overhead for zero real isolation benefit and makes keeping the shared API types in sync actively harder.</p>
+      <div class="tablewrap">
+        <table>
+          <caption>apps/ vs packages/ split</caption>
+          <thead><tr><th>Package</th><th>Contains</th></tr></thead>
+          <tbody>
+            <tr><td><code>apps/public-site</code></td><td>Marketing pages, no auth, statically generated where possible</td></tr>
+            <tr><td><code>apps/collection-app</code></td><td>PWA, service worker, Dexie/IndexedDB sync engine</td></tr>
+            <tr><td><code>apps/admin-portal</code></td><td>Management SPA</td></tr>
+            <tr><td><code>apps/buyer-portal</code></td><td>Buyer SPA</td></tr>
+            <tr><td><code>packages/ui</code></td><td>Shared Tailwind-based design-system components (buttons, tables, form fields)</td></tr>
+            <tr><td><code>packages/api-client</code></td><td>Typed fetch client, generated/aligned with backend Pydantic schemas</td></tr>
+            <tr><td><code>packages/types</code></td><td>Shared TypeScript types (entities, enums) mirroring backend schemas</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>A full build-system tool (Nx/Turborepo) is not necessary at this scale — plain npm/pnpm workspaces are enough and keep the tooling surface a single reviewer needs to understand small.</p>
+    </section>
+
+    <section class="doc" id="s16">
+      <div class="kicker">§16</div>
+      <h2>Backend Architecture</h2>
+      <p>Layered, one direction of dependency: <strong>routers → services → models</strong>, with a thin repository layer only where a service's queries are complex enough to be worth isolating (inventory, matching). Route handlers do request/response translation and permission checks only — they never contain business logic.</p>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart TD
+    R["Router\n(FastAPI path ops,\nauth dependency,\nPydantic I/O)"] --> S["Service\n(business rules,\ntransactions, invariants)"]
+    S --> M["SQLAlchemy models\n(ORM, DB session)"]
+    M --> DB[("PostgreSQL")]
+    S -.-> INV["Inventory service\n(ledger writes)"]
+    S -.-> MATCH["Matching service"]
+</pre>
+        <figcaption>Fig. 5 — One-directional dependency flow. A router never touches the ORM session directly.</figcaption>
+      </div>
+      <p>Cross-cutting concerns (auth, RBAC guards, request logging, error handling) are implemented as FastAPI dependencies and middleware, not duplicated per route. Alembic manages migrations; every schema change is a migration file, never a manual production edit.</p>
+    </section>
+
+    <section class="doc" id="s17">
+      <div class="kicker">§17</div>
+      <h2>Repository / Folder Structure</h2>
+      <div class="tablewrap">
+        <table><tbody>
+<tr><td><pre style="margin:0;white-space:pre;font-family:'IBM Plex Mono';font-size:0.82rem;line-height:1.55;">
+takaflow/
+├── apps/
+│   ├── public-site/
+│   ├── collection-app/
+│   ├── admin-portal/
+│   └── buyer-portal/
+├── packages/
+│   ├── ui/
+│   ├── api-client/
+│   └── types/
+├── backend/
+│   ├── app/
+│   │   ├── routers/
+│   │   ├── schemas/
+│   │   ├── models/
+│   │   ├── services/
+│   │   │   ├── inventory/
+│   │   │   ├── matching/
+│   │   │   ├── sync/
+│   │   │   └── auth/
+│   │   ├── core/          (config, security, deps)
+│   │   └── db/             (session, base)
+│   ├── alembic/
+│   └── tests/
+├── ml/
+│   ├── pipeline/           (aggregation, features, training)
+│   ├── models/             (serialized artifacts, gitignored)
+│   └── notebooks/          (exploration only, never production path)
+├── docs/
+│   └── architecture-blueprint.html   (this document)
+└── infra/                  (docker-compose, env templates)
+</pre></td></tr>
+          </tbody></table>
+      </div>
+    </section>
+
+    <section class="doc" id="s18">
+      <div class="kicker">§18</div>
+      <h2>Security Architecture</h2>
+      <ul>
+        <li><strong>Passwords:</strong> hashed with bcrypt/argon2 via <code>passlib</code>; never logged, never stored or transmitted in plaintext.</li>
+        <li><strong>AuthN/AuthZ:</strong> JWT access + rotating refresh tokens (§14); role- and scope-based authorization enforced server-side on every route.</li>
+        <li><strong>Input validation:</strong> Pydantic at the API boundary; parameterized queries exclusively via SQLAlchemy (no raw string-built SQL, eliminating injection risk by construction).</li>
+        <li><strong>Secrets:</strong> environment variables loaded via <code>.env</code> in development (git-ignored) and the hosting platform's secret store in production — never committed, never hard-coded.</li>
+        <li><strong>Rate limiting:</strong> applied to <code>/auth/login</code> and <code>/auth/refresh</code> specifically, to slow credential-stuffing.</li>
+        <li><strong>Audit logging:</strong> two distinct trails — <code>sync_log</code> for offline-sync attempts (operational), and <code>audit_log</code> for admin actions on users, rates, and materials (accountability). Conflating these would make either one harder to query meaningfully.</li>
+        <li><strong>Offline data at rest:</strong> IndexedDB is not encrypted by the browser and is accessible to anyone with access to the device/profile. For this project's threat model (staff-operated branch devices, not sensitive personal data beyond a supplier's name/phone), this is an accepted, explicitly documented risk rather than a solved one — full at-rest encryption of IndexedDB is real engineering effort disproportionate to what's stored there.</li>
+      </ul>
+      <div class="callout risk">
+        <span class="label">Explicitly not claimed as done</span>
+        <p>None of the above is implemented yet. This section describes what the architecture requires; §19–§20 describe how it will be verified once built.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="s19">
+      <div class="kicker">§19</div>
+      <h2>Testing Strategy</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Approach</th></tr></thead>
+          <tbody>
+            <tr><td>Unit</td><td>Service-layer functions (inventory math, matching allocation, rate resolution) — pure logic, no DB, fast</td></tr>
+            <tr><td>API</td><td>FastAPI's <code>TestClient</code> against a disposable test database per test module</td></tr>
+            <tr><td>Database</td><td>Constraint tests: negative inventory rejected, duplicate UUID rejected, unique rate-per-period enforced</td></tr>
+            <tr><td>Auth/RBAC</td><td>Parametrized tests hitting every protected route with each role, asserting allow/deny matches §06's matrix exactly</td></tr>
+            <tr><td>Offline/Sync</td><td>Simulated outbox replay: duplicate submission, out-of-order sync, mid-batch connection drop, stale-reference conflict — each as an explicit test case, since this is the highest-risk subsystem</td></tr>
+            <tr><td>Inventory consistency</td><td>Property-style test: random sequence of collections/transfers/reservations never produces a negative balance or a ledger/summary mismatch</td></tr>
+            <tr><td>Matching</td><td>Full match, partial match across branches, zero-availability-falls-to-prediction, cases</td></tr>
+            <tr><td>ML evaluation</td><td>Holdout MAE/RMSE compared against the naive baseline every retrain — a model that doesn't beat the baseline is flagged, not silently deployed</td></tr>
+            <tr><td>UI/responsiveness</td><td>Manual pass on collection-app at phone/tablet width (its real usage context) plus automated component tests for shared <code>packages/ui</code></td></tr>
+            <tr><td>Error handling</td><td>Assert every 4xx/5xx path returns the standard error envelope, not a stack trace</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc" id="s20">
+      <div class="kicker">§20</div>
+      <h2>Deployment Strategy</h2>
+      <p>Kept deliberately free-tier and simple, per the brief's instruction to avoid unnecessary paid services:</p>
+      <ul>
+        <li><strong>Development:</strong> Docker Compose running FastAPI + PostgreSQL locally; frontends via Vite dev servers.</li>
+        <li><strong>Production/demo:</strong> Postgres on a managed free tier (e.g., Neon or Supabase), FastAPI on a small always-on-friendly host (e.g., Render/Railway free/hobby tier), static frontends on Netlify/Vercel/Cloudflare Pages. The collection-app PWA deploys the same way as any static SPA — the offline behavior is a client-side concern, not a hosting concern.</li>
+        <li><strong>ML job:</strong> a scheduled task (cron on the same host, or the platform's built-in scheduled-job feature) rather than a separate always-on service — it runs briefly, on a schedule, and writes to the same database.</li>
+        <li><strong>Maps:</strong> use Leaflet + OpenStreetMap tiles for collection-point maps on the public site, not the Google Maps API, to avoid a paid/keyed dependency for a feature that doesn't need it.</li>
+      </ul>
+    </section>
+
+    <section class="doc" id="s21">
+      <div class="kicker">§21</div>
+      <h2>Development Roadmap</h2>
+      <div class="callout challenge">
+        <span class="label">Real timeline note</span>
+        <p>The 15 phases below are the full system's roadmap, useful as a reference for sequencing and dependencies — but the actual build window is 2 weeks (1 for development, 1 for testing), not an academic term. In that window, realistically only Phases 1–8 (foundation through offline-first collection recording) plus a thin slice of Phase 9 are buildable and testable; see §22 for the resulting MVP. Phases 9–13 stay as documented future-state architecture unless time is left over.</p>
+      </div>
+      <p>Reordered from the brief in one meaningful way: <strong>authentication/RBAC and the inventory ledger are pulled forward</strong>, because every later module (collections, payments, matching) depends on both existing correctly first, and retrofitting the ledger pattern after collection transactions already exist would mean a data migration under time pressure.</p>
+      <div class="phase"><strong>Phase 1 — Foundation:</strong> monorepo scaffold, backend skeleton, CI, environment config. <em>No feature dependencies.</em></div>
+      <div class="phase"><strong>Phase 2 — Database &amp; migrations:</strong> full schema from §08, Alembic baseline. <em>Depends on: 1.</em></div>
+      <div class="phase"><strong>Phase 3 — Auth &amp; RBAC:</strong> login, JWT/refresh, role guards, the §06 matrix as tests. <em>Depends on: 2.</em></div>
+      <div class="phase"><strong>Phase 4 — Collection points &amp; materials:</strong> admin CRUD, per-point material acceptance, rate history. <em>Depends on: 3.</em></div>
+      <div class="phase"><strong>Phase 5 — Inventory ledger core:</strong> ledger + summary tables and service, built and tested before any UI calls it. <em>Depends on: 2, 4.</em></div>
+      <div class="phase"><strong>Phase 6 — Collection transactions (walk-in, no registration):</strong> online-only first (no offline yet), posting to the ledger from Phase 5. <em>Depends on: 4, 5.</em></div>
+      <div class="phase"><strong>Phase 7 — Payments:</strong> attached to transactions from Phase 6. <em>Depends on: 6.</em></div>
+      <div class="phase"><strong>Phase 8 — Offline-first collection app:</strong> Dexie outbox, sync endpoint, idempotency, conflict handling — layered onto the already-working online flow from 6–7. <em>Depends on: 6, 7.</em></div>
+      <div class="phase"><strong>Phase 9 — Admin portal &amp; dashboards:</strong> reporting views over data now flowing from 4–8. <em>Depends on: 4–8.</em></div>
+      <div class="phase"><strong>Phase 10 — Buyer portal &amp; buyer requests:</strong> registration, request submission. <em>Depends on: 5 (reads inventory).</em></div>
+      <div class="phase"><strong>Phase 11 — Matching &amp; transfers:</strong> allocation logic, reservations against the ledger. <em>Depends on: 5, 10.</em></div>
+      <div class="phase"><strong>Phase 12 — Public website:</strong> content pages plus the public collection-points read endpoint. <em>Depends on: 4 (data source only) — otherwise independent, can run in parallel with 6–11.</em></div>
+      <div class="phase"><strong>Phase 13 — Predictive analytics:</strong> needs real accumulated collection history, so it necessarily starts late and its quality depends on how much data Phases 6–8 have generated by then. <em>Depends on: 6, 8.</em></div>
+      <div class="phase"><strong>Phase 14 — Testing hardening:</strong> the §19 test matrix filled in across all modules, offline/inventory scenarios prioritized. <em>Depends on: all.</em></div>
+      <div class="phase"><strong>Phase 15 — Deployment &amp; polish:</strong> §20 environments stood up, final UX pass. <em>Depends on: all.</em></div>
+      <div class="callout">
+        <span class="label">Scheduling implication</span>
+        <p>Phase 13 (predictions) is structurally the last feature that can produce believable results, because it needs real weeks of Phase 6–8 data to train on. If the academic timeline is fixed, treat Phase 13 as the one most likely to be scoped down to "pipeline works correctly on the data available" rather than "forecasts are highly accurate" — and say so plainly in the final report rather than overselling it.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="s22">
+      <div class="kicker">§22</div>
+      <h2>MVP vs Future Scope</h2>
+      <p>Reordered around the reframed thesis in §01: the point of this project is proving that inventory recorded offline stays correct under duplicate submits, dropped connections, and concurrent writes. Everything in the must-have list exists to build and demonstrate that; everything demoted to nice-to-have or future is a feature the brief wanted but that a business-in-a-box tool could also provide, so it isn't where the limited two-week budget should go.</p>
+      <div class="grid2">
+        <div class="card">
+          <h4>Must-have (the actual 2-week build: 1 week dev, 1 week test)</h4>
+          <ul>
+            <li><strong>The centerpiece:</strong> offline-first collection recording — Dexie outbox, client-UUID idempotency, retry/backoff, and the double-submit / drop-mid-sync / stale-reference-conflict scenarios not just handled but demonstrably tested (§10, §19)</li>
+            <li><strong>The proof:</strong> append-only inventory ledger + derived summary, atomic writes, non-negative constraint — with a scripted or live "chaos" demo (kill connectivity, fire a duplicate, race two writes) showing the count stays right (§11)</li>
+            <li>Auth + RBAC — Admin and Collection-Point Staff only; Buyer login deferred with the buyer portal below</li>
+            <li>Materials &amp; collection points — minimal config, no per-branch rate history nuance beyond what §8 already requires structurally</li>
+            <li>Collection transactions — walk-in, no registration (§25 item 7), with grade captured inline (§25 item 4)</li>
+            <li>Payments recorded manually — method (M-Pesa or cash) + reference number, no live disbursement (§25 item 2)</li>
+            <li>One thin admin view: today's collections + current inventory per branch, reading real data — enough to prove the ledger, not a full dashboard</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Nice-to-have (only if the core above is solid with days to spare)</h4>
+          <ul>
+            <li>A simple rule-based low-stock flag computed off the ledger (no ML) — see §25 item 8</li>
+            <li>Minimal public site reading real collection-point/material data from the API</li>
+            <li>Buyer portal + simple matching against current inventory only (no predicted-availability blending)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h4>Future scope (explicitly out of bounds for this build)</h4>
+        <ul>
+          <li>Predictive analytics of any form — no real usage history exists at this timeline to train or honestly evaluate a model against (§25 item 8)</li>
+          <li>A registered/persistent <code>supplier</code> entity, search, or self-service accounts — collection is walk-in only by design (§25 item 7)</li>
+          <li>Live M-Pesa/Daraja API disbursement integration (see §25 item 2)</li>
+          <li>Multi-branch matching &amp; predicted-availability blending, inter-branch transfers</li>
+          <li>Map view (Leaflet) on public site</li>
+          <li>Any computer vision, IoT, blockchain, or hardware integration — excluded per the brief, not reconsidered here</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="doc" id="s23">
+      <div class="kicker">§23</div>
+      <h2>Risks &amp; Mitigations</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Risk</th><th>Why it matters</th><th>Mitigation</th></tr></thead>
+          <tbody>
+            <tr><td>Scope exceeds timeline</td><td>Four interfaces + offline + ML + matching is startup-scale, not term-project-scale</td><td>Hard MVP cut in §22; phases ordered so the highest-risk subsystem (offline sync) is built and hardened mid-project, not last</td></tr>
+            <tr><td>Inventory race conditions</td><td>Concurrent collections/transfers could double-count or go negative</td><td>Append-only ledger + atomic increments + DB check constraints (§11)</td></tr>
+            <tr><td>Duplicate offline transactions</td><td>Retries/double-submits could double-pay a supplier or double-count stock</td><td>Client UUID as DB-enforced idempotency key (§10)</td></tr>
+            <tr><td>Sync conflicts on stale reference data</td><td>Offline record references a rate/material later changed or deactivated</td><td>Explicit CONFLICT state surfaced to a human, never silently dropped or auto-merged (§10)</td></tr>
+            <tr><td>Insufficient historical data for ML</td><td>A new system has no history on day one; forecasts could be meaningless or overfit</td><td>Minimum-sample gate, explicit "insufficient data" response, baseline always compared (§13)</td></tr>
+            <tr><td>Overselling prediction accuracy</td><td>An examiner or buyer could mistake a forecast for a guarantee</td><td>Two separate, distinctly-labeled fields at the API/schema level, never summed server-side (§12)</td></tr>
+            <tr><td>Auth/security gaps</td><td>Multi-role system handling supplier PII and payment records</td><td>Hashed passwords, short-lived JWTs, server-side RBAC enforcement, parameterized queries (§18)</td></tr>
+            <tr><td>Frontend complexity from 4 apps</td><td>Duplicated components/types across apps if not shared deliberately</td><td>Monorepo with <code>packages/ui</code>, <code>packages/types</code>, <code>packages/api-client</code> (§15)</td></tr>
+            <tr><td>Deployment complexity across 4 frontends + API + DB + ML job</td><td>More moving pieces than a typical student deployment</td><td>Static hosting for all 4 frontends, one managed Postgres, one small API host, ML as a scheduled task — no orchestration platform needed (§20)</td></tr>
+            <tr><td>Payment integration ambiguity</td><td>Brief implies M-Pesa-style references without specifying real integration</td><td>Scoped to manual recording of method + reference number for MVP; live disbursement API flagged as future scope (§25)</td></tr>
+            <tr><td>No collector identity (walk-in only)</td><td>Anyone can be paid with no ID/phone required, so duplicate or fraudulent claims can't be detected by matching a person across visits</td><td>Accepted risk for this build, same category as §18's IndexedDB-at-rest call: staff sign-off and the immutable transaction record are the only controls; a real identity/dedup layer is future scope if abuse becomes a problem (§25 item 7)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc" id="s24">
+      <div class="kicker">§24</div>
+      <h2>Architectural Decision Record</h2>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-01 — Frontend architecture</h4><span class="decision">Monorepo, 4 apps, shared packages</span></div>
+        <dl>
+          <dt>Reason</dt><dd>The four interfaces have genuinely different runtime requirements (offline vs. not, public vs. authenticated, SEO vs. app-shell) but share components, types, and an API client. Monorepo captures the sharing without forcing one bundle to carry every requirement.</dd>
+          <dt>Alternatives</dt><dd>Option A (one app, role-based sections) — rejected: bloats every client with concerns it doesn't need. Option C (separate repos) — rejected: multiplies process overhead for a single-team project with no isolation benefit.</dd>
+        </dl>
+      </div>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-02 — Backend architecture</h4><span class="decision">Layered: router → service → model</span></div>
+        <dl>
+          <dt>Reason</dt><dd>Keeps business rules (inventory math, matching, idempotency) testable in isolation from HTTP and out of route handlers.</dd>
+          <dt>Alternatives</dt><dd>Logic-in-routes ("fat controllers") — rejected: untestable without spinning up HTTP, and the brief explicitly asks not to do this.</dd>
+        </dl>
+      </div>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-03 — Database engine &amp; ORM</h4><span class="decision">PostgreSQL + SQLAlchemy + Alembic, as proposed</span></div>
+        <dl>
+          <dt>Reason</dt><dd>Relational integrity (FKs, check constraints) is doing real work here — inventory correctness depends on it. Kept as originally proposed; no change needed.</dd>
+          <dt>Alternatives</dt><dd>None seriously considered — this is the right tool for this data shape.</dd>
+        </dl>
+      </div>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-04 — Authentication</h4><span class="decision">JWT access + rotating refresh, server-enforced RBAC</span></div>
+        <dl>
+          <dt>Reason</dt><dd>Stateless access tokens suit a multi-frontend system; a revocable refresh token addresses the classic JWT weakness (can't invalidate a stolen long-lived token).</dd>
+          <dt>Alternatives</dt><dd>Server-side sessions — workable, but adds session-store infra for no benefit at this scale.</dd>
+        </dl>
+      </div>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-05 — Offline storage</h4><span class="decision">IndexedDB via Dexie.js, not raw IndexedDB</span></div>
+        <dl>
+          <dt>Reason</dt><dd>Same browser guarantees, dramatically less hand-rolled boilerplate and fewer subtle bugs in a project already carrying significant scope.</dd>
+          <dt>Alternatives</dt><dd>SQLite via WASM (sql.js/absurd-sql) — more powerful but heavier and unnecessary for outbox-style storage; raw IndexedDB — rejected for maintainability, not capability.</dd>
+        </dl>
+      </div>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-06 — Synchronization strategy</h4><span class="decision">Client-UUID idempotency + per-record batch outcomes</span></div>
+        <dl>
+          <dt>Reason</dt><dd>Directly and cheaply solves duplicate-submission and partial-batch-failure, the two scenarios the brief is most worried about.</dd>
+          <dt>Alternatives</dt><dd>Server-generated IDs with client-side dedup heuristics — rejected: heuristic matching is inherently less reliable than a guaranteed-unique client key.</dd>
+        </dl>
+      </div>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-07 — Inventory model</h4><span class="decision">Append-only ledger + derived summary table</span></div>
+        <dl>
+          <dt>Reason</dt><dd>Auditable, race-safe via atomic increments, and directly answers "how do you know this number is right."</dd>
+          <dt>Alternatives</dt><dd>Single mutable counter (the brief's starting design) — rejected: exactly the pattern that causes the double-counting/negative-inventory failures the brief wants avoided.</dd>
+        </dl>
+      </div>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-08 — Buyer matching</h4><span class="decision">Greedy rank-and-allocate, human-confirmed</span></div>
+        <dl>
+          <dt>Reason</dt><dd>Correctly scoped to the brief's own instruction to avoid unnecessary optimization complexity; a human confirms before commitment, bounding the algorithm's responsibility.</dd>
+          <dt>Alternatives</dt><dd>Constraint-solver/optimization approach — rejected as disproportionate to the problem size and explicitly discouraged by the brief.</dd>
+        </dl>
+      </div>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-09 — ML architecture</h4><span class="decision">Offline batch job, scikit-learn, baseline always compared</span></div>
+        <dl>
+          <dt>Reason</dt><dd>Decouples model training from the request path; comparing against a naive baseline keeps model selection honest on a necessarily small dataset.</dd>
+          <dt>Alternatives</dt><dd>Inline/real-time inference — unnecessary, forecasts don't need sub-second freshness; deep learning — rejected, wrong tool for a small tabular dataset.</dd>
+        </dl>
+      </div>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-10 — Repository structure</h4><span class="decision">Single monorepo: apps/, packages/, backend/, ml/, docs/</span></div>
+        <dl>
+          <dt>Reason</dt><dd>One place to review, one CI pipeline, atomic cross-cutting commits (e.g., a schema change and its matching TypeScript type in the same PR).</dd>
+          <dt>Alternatives</dt><dd>Per-service repos — rejected for the same reasons as ADR-01.</dd>
+        </dl>
+      </div>
+
+      <div class="adr">
+        <div class="adrhead"><h4>ADR-11 — Deployment approach</h4><span class="decision">Free-tier managed hosts, no container orchestration</span></div>
+        <dl>
+          <dt>Reason</dt><dd>Matches the brief's instruction to avoid paid services and keeps operational complexity proportional to a project with one maintainer.</dd>
+          <dt>Alternatives</dt><dd>Kubernetes/self-managed VM cluster — rejected as disproportionate infrastructure for this project's scale and audience.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="doc" id="s25">
+      <div class="kicker">§25</div>
+      <h2>Contradictions &amp; Missing Requirements</h2>
+      <div class="callout">
+        <span class="label">1 — Scope vs. timeline (the big one) · Resolved</span>
+        <p>The brief asks for four production-grade interfaces, an offline sync engine, a matching system, and an ML pipeline. The real build window turned out to be two weeks total (one for development, one for testing) — far tighter than this document originally assumed. <strong>Decision:</strong> build only what §22's must-have list now contains — offline-safe collection recording and the inventory ledger, plus the minimum surrounding it needs to run — and defer everything else, including the buyer portal, public site, and predictions, as documented future work rather than partial, untested implementations.</p>
+      </div>
+      <div class="callout">
+        <span class="label">2 — Payment settlement is unspecified · Resolved</span>
+        <p>The brief includes <code>payment_method</code> and <code>reference_number</code> fields, which in a Kenyan context strongly implies M-Pesa. <strong>Decision:</strong> the company pays suppliers by M-Pesa or cash; TAKAFLOW records which method was used and a reference for it. No live Safaricom Daraja disbursement integration — that's meaningfully larger scope (sandbox credentials, a registered till/paybill, callback handling) than this timeline supports, and is flagged as future work.</p>
+      </div>
+      <div class="callout">
+        <span class="label">3 — Field-agent vs. fixed-branch collection is unstated · Resolved</span>
+        <p><strong>Decision:</strong> confirmed — collection happens at physical branches with intermittent connectivity, not via roaming field agents on personal phones. The §10 offline design (Dexie/IndexedDB, desktop/tablet storage-quota assumptions) stands as designed; no revisiting needed.</p>
+      </div>
+      <div class="callout">
+        <span class="label">4 — Quality/grade requirements have no data model · Resolved</span>
+        <p><strong>Decision:</strong> staff record the grade/quality of the material at the same time they log the collection. A <code>grade</code> field on <code>collection_transaction</code> (§8) captures this; with the buyer portal deferred (item 1), it's stored for now and doesn't yet feed a matching constraint.</p>
+      </div>
+      <div class="callout">
+        <span class="label">5 — "Collectors do not need accounts" vs. "design for future accounts" · Superseded by item 7</span>
+        <p>The original brief implied supplier accounts might come later, which is why <code>supplier.user_id</code> was made nullable. Item 7 below goes further: there's no <code>supplier</code> entity at all for this build. If self-service accounts are ever worth adding — only if the project continues past presentation — that reintroduces the entity as a migration, not a redesign.</p>
+      </div>
+      <div class="callout">
+        <span class="label">6 — New: the real timeline breaks the original MVP, not just the roadmap</span>
+        <p>This document's roadmap (§21) and original MVP list (§22) were sized for a normal final-year-project runway. Learning the actual window is 2 weeks total is itself a contradiction against that sizing — even the "must-have" list as first written (4 interfaces, full RBAC, offline sync, a ledger, matching, and forecasting) is not buildable and testable by one person in a single dev week. §21 and §22 have been revised in place to reflect this: only Phases 1–8 are targeted, and the must-have list is cut to the offline-recording-and-ledger core plus its minimum supporting pieces.</p>
+      </div>
+      <div class="callout">
+        <span class="label">7 — Resolved: no supplier registration exists</span>
+        <p>Clarified: collectors are not registered at all. Anyone — including someone with no phone or national ID — can bring material, have it examined and graded by staff, and be paid on the spot; there is no account, no search, and no requirement to recognize the same person across visits. This removes the identifier-uniqueness problem a registered-supplier model would have created for ID-less walk-ins, and it simplifies §8/§9: no <code>supplier</code> entity, just optional <code>collector_name</code>/<code>collector_phone</code> fields on <code>collection_transaction</code> kept for the payment record only.</p>
+      </div>
+      <div class="callout">
+        <span class="label">8 — Resolved: predictive analytics dropped from this build</span>
+        <p>§13 requires roughly 12 weeks of real collection history before a regression model is even attempted, and returns "insufficient data" below that. A 2-week build cannot generate that history, so forecasting could only ever demo on seeded data — which is the "not practical" feeling that prompted this discussion in the first place. <strong>Decision:</strong> predictive analytics is fully out of scope for this build (moved from must-have to future scope in §22). The time it would have taken is spent instead on hardening and demonstrating the offline-sync/ledger correctness story — the actual technical core per §01 — with a simple, non-ML, ledger-derived low-stock flag as an optional bonus if time remains.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="s26">
+      <div class="kicker">§26</div>
+      <h2>Final Recommended Architecture</h2>
+      <p>For the actual 2-week build: one FastAPI backend, one PostgreSQL database with an event-sourced inventory ledger at its core, and one authenticated PWA where branch staff record walk-in collections — offline-first via Dexie/IndexedDB, idempotent by construction through client-generated UUIDs, never silently losing or duplicating data. Inventory correctness is guaranteed by atomic ledger writes and database constraints, not application-level discipline alone. A thin admin view reads that same real data. Everything else this document designs — the buyer portal, public site, matching, and predictive analytics — is documented in full because a real architecture has to account for where the system grows next, but none of it is built now, and none of it is what the defense should hinge on.</p>
+      <p>The case for this being a CS project rather than a business plan rests entirely on the offline-sync-and-ledger correctness problem in §10–§11: a non-technical team can specify "record collections and track inventory," but idempotent sync, conflict handling, and concurrency-safe accounting are the parts that are actually hard to get right, and the parts worth defending. The technology stack proposed in the brief is adopted almost unchanged; the real engineering work in this document is in the data model (§08, §11) and in drawing an honest, defendable line between what two weeks can actually build and what stays future scope (§22).</p>
+      <p><strong>Recommended next step:</strong> build and test Phases 1–8 from §21 to the standard §19 describes for offline/inventory scenarios specifically — that test coverage, demonstrated live, is the strongest evidence this is more than a business idea.</p>
+    </section>
+
+    <footer class="doc">
+      TAKAFLOW Architecture Blueprint — pre-implementation draft. No application code, database, migrations, or infrastructure have been created. Awaiting review.
+    </footer>
+  </main>
+</div>
