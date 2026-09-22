@@ -110,6 +110,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
       const qs = query.toString();
       return request<CollectionTransactionOut[]>(`/collection-transactions${qs ? `?${qs}` : ""}`);
     },
+
+    // Phase 12: no auth required - the public site's data source (§05).
+    listPublicCollectionPoints: () => request<CollectionPointOut[]>("/public/collection-points"),
+
+    listPublicAcceptedMaterials: (collectionPointId: number) =>
+      request<AcceptedMaterialOut[]>(`/public/collection-points/${collectionPointId}/materials`),
   };
 }
 

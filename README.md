@@ -2,7 +2,7 @@
 
 Architecture and scope decisions live in [docs/architecture-blueprint.html](docs/architecture-blueprint.html) — read §22 (MVP) and §25 (resolved contradictions) before touching anything here.
 
-Phases 1–9 are done: the full core MVP per §22 is now built and verified. What remains is polish, not new architecture — see "Next" below.
+Phases 1–9 (the full core MVP per §22) plus Phase 12 (public site) are done. What remains is polish, not new architecture — see "Next" below.
 
 ## Layout
 
@@ -10,9 +10,10 @@ Phases 1–9 are done: the full core MVP per §22 is now built and verified. Wha
 apps/
   collection-app/   Offline-first PWA for branch staff (Vite + React + TS)
   admin-portal/     Thin admin SPA (Vite + React + TS)
+  public-site/      Read-only public site, no auth (Vite + React + TS)
 packages/
-  ui/               Shared components (empty until the first real screen)
-  api-client/       Typed fetch client shared by both apps
+  ui/               Shared auth/login + components used by collection-app and admin-portal
+  api-client/       Typed fetch client shared by all three apps
   types/            Shared TS types mirroring backend schemas
 backend/
   app/              FastAPI app: routers → services → models
@@ -20,7 +21,7 @@ backend/
   tests/
 ```
 
-`apps/public-site`, `apps/buyer-portal`, and `ml/` are deliberately not scaffolded — they're future scope per §22/§25 item 6, not part of the 2-week build.
+`apps/buyer-portal` and `ml/` are deliberately not scaffolded — they're future scope per §22/§25 item 6, not part of this build.
 
 ## First-time setup
 
@@ -167,11 +168,18 @@ Verified live: real admin login against real data (two collection transactions, 
 
 ## MVP complete (§22)
 
-Every must-have item from the blueprint's MVP list is now built and verified: auth/RBAC, materials & branches, walk-in collection transactions, the inventory ledger, offline-first sync, manual payments, and the thin admin view. Predictive analytics, the buyer portal, the public site, and live M-Pesa disbursement remain out of scope per §22/§25 — deliberately, not by omission.
+Every must-have item from the blueprint's MVP list is built and verified: auth/RBAC, materials & branches, walk-in collection transactions, the inventory ledger, offline-first sync, manual payments, and the thin admin view. Predictive analytics, the buyer portal, and live M-Pesa disbursement remain out of scope per §22/§25 — deliberately, not by omission.
+
+## Public site (Phase 12, done)
+
+`apps/public-site` — no login, no `packages/ui` dependency (it has no session to manage), reading two new unauthenticated endpoints: `GET /api/v1/public/collection-points` (active branches only) and `GET /api/v1/public/collection-points/{id}/materials` (accepted materials + current rate — the same rate data staff see, since advertising "we pay X/kg here" to walk-in collectors is the actual point of a public site for this business). A deactivated branch's materials endpoint 404s the same way a nonexistent one would, rather than leaking a closed branch's details.
+
+**A real leftover found and fixed while checking the live page, not left for someone else to notice**: the demo page initially showed a stray "Debug Point" with address "x" — a row created by a one-off reproduction script back in Phase 5 (the `INSERT ... ON CONFLICT` investigation) whose cleanup code never ran because the script deliberately crashed to reproduce the bug. It had been sitting in the dev database, invisible, until this was the first phase to publicly list *every* active collection point. Removed it, then swept every collection point/material/user row in the database to confirm nothing else from earlier phases' manual testing had leaked through.
+
+Verified live: real branch data (name, address, opening hours) and a real rate (15.5/kg) rendered with no authentication at all. `backend/tests/test_public.py` (5 tests) covers the no-auth access, the active-only filter, and the inactive-branch 404. 48/48 backend tests pass.
 
 ## Optional next steps
 
-Nothing left is architecturally required for the MVP; what's left is hardening and packaging:
+Nothing left is architecturally required. Phases 10 (buyer portal), 11 (matching & transfers), and 13 (predictive analytics) stay out of scope per §22/§25 — deliberately dropped for this timeline, not forgotten. What's left is hardening and packaging:
 - **Testing hardening** (§21 Phase 14) — the test suite already covers each phase's own correctness claims; a pass looking specifically for gaps *across* phases (e.g. what happens to a payment if its transaction's material is later deactivated) would be the highest-value use of remaining time.
 - **Deployment** (§21 Phase 15) — standing up the free-tier hosting from §20 so the app is reachable outside `localhost` for the defense.
-- Nice-to-haves from §22, only if time remains after the above: a simple rule-based low-stock flag off the ledger, a minimal public site, or the buyer portal with simple current-inventory-only matching.
