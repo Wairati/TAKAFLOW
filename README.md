@@ -2,7 +2,7 @@
 
 Architecture and scope decisions live in [docs/architecture-blueprint.html](docs/architecture-blueprint.html) — read §22 (MVP) and §25 (resolved contradictions) before touching anything here.
 
-Phase 1 (foundation scaffold) and Phase 2 (full database schema) are done. No API features yet — that starts at Phase 3.
+Phases 1–3 are done: foundation scaffold, full database schema, and auth/RBAC. Phase 4 (collection points & materials admin CRUD) is next.
 
 ## Layout
 
@@ -64,6 +64,25 @@ One deliberate deviation from §08's wording: every `material_rate` row is tied 
 
 `backend/tests/test_inventory_constraints.py` proves the negative-inventory `CHECK` constraints actually reject bad data against the real database, not a mock.
 
-## Next: Phase 3
+## Auth & RBAC (Phase 3, done)
 
-Auth & RBAC — login, JWT/refresh tokens, and role guards enforcing the §06 permissions matrix. See §21 for the full phase sequence and §22 for what's actually in scope this build.
+Two roles only for this build: `admin` and `collection_point_staff` (`buyer` deferred with the buyer portal, §22). Endpoints, all under `/api/v1/auth`:
+
+- `POST /login` — email + password → access token (15 min JWT) + refresh token
+- `POST /refresh` — rotates the refresh token: the one presented is revoked and a new pair issued; replaying an already-used refresh token fails
+- `POST /logout` — revokes a refresh token
+- `GET /me` — current user's identity, for the frontend to bootstrap on load
+- `POST /users` — admin-only, creates staff/admin accounts (no self-registration, §06)
+
+Refresh tokens are stored as a SHA-256 hash only (`refresh_token` table) — a database leak alone can't be replayed as a live session. `backend/app/core/deps.py` has the two reusable guards every future route will use: `require_role(...)` and `require_own_collection_point(...)`.
+
+There's no admin account yet anywhere — the very first one has to be created directly against the database, since nothing can call the admin-only `/users` endpoint yet. Run this once:
+```
+cd backend
+.venv\Scripts\python -m app.scripts.create_admin
+```
+It asks for an email, name, and password, and creates that user as an admin. Every account after that should go through `POST /auth/users` instead.
+
+## Next: Phase 4
+
+Collection points & materials admin CRUD, per-point material acceptance, rate history — protected by the guards built in Phase 3. See §21 for the full phase sequence and §22 for what's actually in scope this build.

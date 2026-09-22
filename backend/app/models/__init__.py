@@ -7,6 +7,7 @@ from app.models.device import Device
 from app.models.inventory import InventoryLedger, InventorySummary
 from app.models.material import CollectionPointMaterial, Material, MaterialRate
 from app.models.payment import Payment
+from app.models.refresh_token import RefreshToken
 from app.models.sync_log import SyncLog
 from app.models.user import User
 
@@ -21,6 +22,7 @@ __all__ = [
     "Material",
     "MaterialRate",
     "Payment",
+    "RefreshToken",
     "SyncLog",
     "User",
 ]
