@@ -2,7 +2,7 @@
 
 Architecture and scope decisions live in [docs/architecture-blueprint.html](docs/architecture-blueprint.html) — read §22 (MVP) and §25 (resolved contradictions) before touching anything here.
 
-Phases 1–6 are done: foundation scaffold, full database schema, auth/RBAC, collection points & materials admin CRUD, the inventory ledger service, and collection-transaction recording. Phase 7 (payments) is next.
+Phases 1–7 are done: foundation scaffold, full database schema, auth/RBAC, collection points & materials admin CRUD, the inventory ledger service, collection-transaction recording, and payments. Phase 8 (offline-first collection app — the centerpiece) is next.
 
 ## Layout
 
@@ -125,6 +125,14 @@ Fixed one real bug while writing the tests (not application code — a test fixt
 
 `backend/tests/test_collection_transactions.py` proves, against the real database: only staff (never admin) can record; a duplicate `client_transaction_uuid` is idempotent and does not double-count; recording against a material the branch doesn't accept is rejected; staff can't view another branch's transactions; admin can view all. 29/29 backend tests pass.
 
-## Next: Phase 7
+## Payments (Phase 7, done)
 
-Payments — attached to the collection transactions from Phase 6, recorded manually (M-Pesa or cash + reference, §25 item 2). See §21 for the full phase sequence and §22 for what's actually in scope this build.
+`POST/GET /api/v1/collection-transactions/{id}/payments` — staff-only to record (same branch-scoping as recording the collection itself), admin can view. Manual recording only, per §25 item 2 — no live M-Pesa/Daraja disbursement. A transaction can have more than one payment (§08: the FK is one-to-many), so this never enforces "already paid," it just records what staff report happened.
+
+One rule enforced beyond the bare minimum: an M-Pesa payment must include a reference number (the confirmation code) — cash doesn't need one. Without that, "recorded which method was used" would be true in name only for the one method where a real, checkable reference always exists.
+
+`backend/tests/test_payments.py` proves, against the real database: only staff can record (admin is blocked), M-Pesa without a reference is rejected, cash without one is fine, a transaction can carry multiple payments, and a staff member can't pay against another branch's transaction. 36/36 backend tests pass.
+
+## Next: Phase 8
+
+The offline-first collection app — Dexie/IndexedDB outbox, sync endpoint, idempotency and conflict handling on top of the online flow from Phases 6–7. This is the actual centerpiece of the project's technical argument (§10–§11): the correctness story only means something once it's proven under a real dropped connection and a real duplicate submit, live. See §21 for the full phase sequence and §22 for what's actually in scope this build.

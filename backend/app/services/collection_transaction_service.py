@@ -42,7 +42,7 @@ def record_collection(
             detail="Your account has no assigned collection point — ask an admin to set one",
         )
     if data.quantity <= 0:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Quantity must be positive")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Quantity must be positive")
 
     # Idempotency (SS10): a duplicate client_transaction_uuid is answered with
     # the original record, as a success, not an error — this is what makes a

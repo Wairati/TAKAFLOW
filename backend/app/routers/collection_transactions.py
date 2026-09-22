@@ -5,7 +5,8 @@ from app.core.deps import get_current_user, require_role
 from app.db.session import get_db
 from app.models.user import User, UserRole
 from app.schemas.collection_transaction import CollectionTransactionCreate, CollectionTransactionOut
-from app.services import collection_transaction_service
+from app.schemas.payment import PaymentCreate, PaymentOut
+from app.services import collection_transaction_service, payment_service
 from app.services.collection_transaction_service import to_out
 
 router = APIRouter(prefix="/collection-transactions", tags=["collection-transactions"])
@@ -51,3 +52,25 @@ def get_transaction(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only view your own collection point")
 
     return to_out(transaction, float(transaction.material_rate.rate))
+
+
+# ---- Payments (Phase 7, blueprint SS25 item 2: manual recording only) ----
+
+
+@router.post("/{transaction_id}/payments", response_model=PaymentOut, status_code=201)
+def record_payment(
+    transaction_id: int,
+    data: PaymentCreate,
+    db: Session = Depends(get_db),
+    staff: User = Depends(require_role(UserRole.COLLECTION_POINT_STAFF)),
+) -> PaymentOut:
+    """§06: staff pay the collector on the spot, at their own branch — same
+    scoping as recording the collection itself."""
+    return payment_service.record_payment(db, transaction_id, data, staff)
+
+
+@router.get("/{transaction_id}/payments", response_model=list[PaymentOut])
+def list_payments(
+    transaction_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> list[PaymentOut]:
+    return payment_service.list_payments(db, transaction_id, user)
