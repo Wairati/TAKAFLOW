@@ -71,7 +71,7 @@ def update_material(db: Session, material_id: int, data: MaterialUpdate, admin: 
 # ---- Per-point acceptance & rate history (blueprint SS08 challenges 2 & 3) ----
 
 
-def _get_current_rate(db: Session, point_id: int, material_id: int) -> MaterialRate | None:
+def get_current_rate(db: Session, point_id: int, material_id: int) -> MaterialRate | None:
     return db.scalar(
         select(MaterialRate).where(
             MaterialRate.collection_point_id == point_id,
@@ -89,7 +89,7 @@ def _rotate_rate(db: Session, point_id: int, material_id: int, new_rate: float) 
     accidental."""
     now = datetime.now(timezone.utc)
 
-    current = _get_current_rate(db, point_id, material_id)
+    current = get_current_rate(db, point_id, material_id)
     if current is not None:
         current.effective_to = now
         db.flush()
@@ -137,7 +137,7 @@ def accept_material(db: Session, point_id: int, material_id: int, rate: float, a
 
 
 def change_rate(db: Session, point_id: int, material_id: int, rate: float, admin: User) -> MaterialRate:
-    if _get_current_rate(db, point_id, material_id) is None:
+    if get_current_rate(db, point_id, material_id) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="This material is not currently accepted at this collection point",
@@ -170,7 +170,7 @@ def stop_accepting(db: Session, point_id: int, material_id: int, admin: User) ->
             detail="This material is not currently accepted at this collection point",
         )
 
-    current = _get_current_rate(db, point_id, material_id)
+    current = get_current_rate(db, point_id, material_id)
     if current is not None:
         current.effective_to = datetime.now(timezone.utc)
 
@@ -193,7 +193,7 @@ def list_accepted_materials(db: Session, point_id: int) -> list[AcceptedMaterial
     result = []
     for link in links:
         material = get_material(db, link.material_id)
-        current_rate = _get_current_rate(db, point_id, link.material_id)
+        current_rate = get_current_rate(db, point_id, link.material_id)
         if current_rate is not None:
             result.append(AcceptedMaterialOut.model_validate({"material": material, "current_rate": current_rate}))
     return result

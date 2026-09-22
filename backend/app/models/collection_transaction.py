@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
 
@@ -31,6 +31,8 @@ class CollectionTransaction(TimestampMixin, Base):
     material_rate_id: Mapped[int] = mapped_column(
         ForeignKey("material_rate.id"), nullable=False
     )
+    material_rate: Mapped["MaterialRate"] = relationship()
+
     recorded_by_user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
 
     # Which physical device/session this came from — relevant once offline

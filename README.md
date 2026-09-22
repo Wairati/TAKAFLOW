@@ -2,7 +2,7 @@
 
 Architecture and scope decisions live in [docs/architecture-blueprint.html](docs/architecture-blueprint.html) — read §22 (MVP) and §25 (resolved contradictions) before touching anything here.
 
-Phases 1–5 are done: foundation scaffold, full database schema, auth/RBAC, collection points & materials admin CRUD, and the inventory ledger service. Phase 6 (suppliers & collection transactions) is next.
+Phases 1–6 are done: foundation scaffold, full database schema, auth/RBAC, collection points & materials admin CRUD, the inventory ledger service, and collection-transaction recording. Phase 7 (payments) is next.
 
 ## Layout
 
@@ -113,6 +113,18 @@ Verified against the real database: creating a material, accepting it at a branc
 - an adjustment that would push the balance negative is rejected and leaves no partial trace
 - **20 concurrent threads, each its own DB connection, each posting +1 at the same instant, produce a final balance of exactly 20** — the actual claim this whole design rests on, proven against real concurrent Postgres connections, not asserted in a single-threaded test that couldn't have caught a race even if one existed
 
-## Next: Phase 6
+## Collection transactions (Phase 6, done)
 
-Collection transactions (online-only first, no offline sync yet) — walk-in collectors per §25 item 7, posting to the Phase 5 ledger. See §21 for the full phase sequence and §22 for what's actually in scope this build.
+`POST /api/v1/collection-transactions` — staff-only (§06: admin can view, never record), always at the staff member's own branch, never a point the client supplies. Online-only for now; Phase 8 adds the offline outbox on top without changing this endpoint's contract.
+
+What it actually does, in one DB transaction: looks up the branch's *current* rate for the material (rejects with 409 if that material isn't accepted there), inserts the immutable `collection_transaction` row, then calls Phase 5's `inventory_service.post_movement(...)` to post exactly one ledger entry and update the summary — both succeed or both roll back together.
+
+**Idempotency (§10) is real, not aspirational**: `client_transaction_uuid` is a required client-generated field even in this online-only phase, so the contract never has to change when Phase 8's offline outbox starts generating it on a device instead of a browser tab. Submitting the same UUID twice returns the *original* record as a 200-equivalent success, not an error — and, proven by test, does not double-count the inventory.
+
+Fixed one real bug while writing the tests (not application code — a test fixture ordering bug, but worth noting because it's the same category of mistake the app itself is designed to prevent): a teardown fixture deleted a staff `user` row while a `collection_transaction` still referenced it via `recorded_by_user_id`, violating the FK, because fixtures tear down in reverse dependency order and the transaction cleanup lived in the wrong fixture. Moved it to the fixture that actually owns that foreign key.
+
+`backend/tests/test_collection_transactions.py` proves, against the real database: only staff (never admin) can record; a duplicate `client_transaction_uuid` is idempotent and does not double-count; recording against a material the branch doesn't accept is rejected; staff can't view another branch's transactions; admin can view all. 29/29 backend tests pass.
+
+## Next: Phase 7
+
+Payments — attached to the collection transactions from Phase 6, recorded manually (M-Pesa or cash + reference, §25 item 2). See §21 for the full phase sequence and §22 for what's actually in scope this build.
