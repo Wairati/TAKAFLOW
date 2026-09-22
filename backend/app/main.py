@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.routers import auth, collection_points, collection_transactions, health, materials
+from app.routers import auth, collection_points, collection_transactions, health, materials, sync
 
 settings = get_settings()
 
@@ -22,3 +22,4 @@ app.include_router(auth.router, prefix=settings.api_v1_prefix)
 app.include_router(collection_points.router, prefix=settings.api_v1_prefix)
 app.include_router(materials.router, prefix=settings.api_v1_prefix)
 app.include_router(collection_transactions.router, prefix=settings.api_v1_prefix)
+app.include_router(sync.router, prefix=settings.api_v1_prefix)

@@ -13,6 +13,8 @@
     "@takaflow/api-client": "*",
     "@takaflow/types": "*",
     "@takaflow/ui": "*",
+    "dexie": "^4.0.11",
+    "dexie-react-hooks": "^1.1.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

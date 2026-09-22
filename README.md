@@ -2,7 +2,7 @@
 
 Architecture and scope decisions live in [docs/architecture-blueprint.html](docs/architecture-blueprint.html) — read §22 (MVP) and §25 (resolved contradictions) before touching anything here.
 
-Phases 1–7 are done: foundation scaffold, full database schema, auth/RBAC, collection points & materials admin CRUD, the inventory ledger service, collection-transaction recording, and payments. Phase 8 (offline-first collection app — the centerpiece) is next.
+Phases 1–8 are done, including the offline-first collection app — the centerpiece of the project's technical argument. Phase 9 (admin portal & dashboards) is next.
 
 ## Layout
 
@@ -133,6 +133,28 @@ One rule enforced beyond the bare minimum: an M-Pesa payment must include a refe
 
 `backend/tests/test_payments.py` proves, against the real database: only staff can record (admin is blocked), M-Pesa without a reference is rejected, cash without one is fine, a transaction can carry multiple payments, and a staff member can't pay against another branch's transaction. 36/36 backend tests pass.
 
-## Next: Phase 8
+## Offline-first collection app (Phase 8, done)
 
-The offline-first collection app — Dexie/IndexedDB outbox, sync endpoint, idempotency and conflict handling on top of the online flow from Phases 6–7. This is the actual centerpiece of the project's technical argument (§10–§11): the correctness story only means something once it's proven under a real dropped connection and a real duplicate submit, live. See §21 for the full phase sequence and §22 for what's actually in scope this build.
+This is the centerpiece — everything else in this build exists to support this phase's claim: recording a collection works correctly whether the device is online, offline, or drops mid-sync.
+
+**Backend**: `POST /api/v1/sync/collection-transactions` (`backend/app/services/sync_service.py`) takes a batch of items and processes each one independently through the *same* `collection_transaction_service.record_collection` path Phase 6's direct endpoint uses — one item's failure (e.g. a stale material reference) is caught, rolled back, and reported as `"conflict"`, without affecting any other item in the batch. Proven by test: a 3-item batch with a deliberately bad middle item returns `synced, conflict, synced` and the ledger reflects only the two good ones.
+
+**Frontend** (`apps/collection-app`): a real login (session persisted via the rotating refresh token, §14/ADR-04), a collection-recording form, and a Dexie/IndexedDB outbox with a visible sync-status panel (`backend`'s claims are only worth something if a person can *see* pending vs. synced, not just trust that it works):
+
+- `src/db.ts` — the outbox (one row per collection, keyed by the same `client_transaction_uuid` the backend uses for idempotency) and a reference cache of the branch's accepted materials, so the form works fully offline once loaded once.
+- `src/sync.ts` — the engine: drains the outbox on an `online` event, a 30s timer, and a manual "Sync now" button (never relying on the unreliable-cross-browser Background Sync API alone, per §10). A dropped request puts everything back to `pending` rather than leaving it stuck.
+- `src/CollectionForm.tsx` / `src/OutboxStatus.tsx` — recording and visibility, reactive via `dexie-react-hooks` so the UI updates the instant the sync engine changes a row's status.
+
+**Verified live, not just unit-tested** — a real Playwright-driven Edge browser hitting the real dev servers, doing exactly the demo script from §10/§26:
+1. Log in, submit a collection online → shows **Synced** within moments.
+2. Real network-level offline (Playwright's `context.setOffline(true)`, not a mock) → UI correctly shows "offline".
+3. Submit a second collection while offline → queues as **Pending**, does not fail or hang.
+4. Reconnect, click **Sync now** → the queued item transitions to **Synced** — both records end up correct in the real Postgres ledger.
+
+One real bug fixed along the way (not assumed away): the offline-submit test generated two different UUIDs — one for the outbox row's key, one inside its payload — which would have silently broken the idempotency guarantee the whole design rests on. Caught before it shipped by tracing through the code, not by a failing test.
+
+`backend/tests/test_sync.py` (4 tests) covers the server side; the interactive script above covers the actual user-facing claim end to end.
+
+## Next: Phase 9
+
+Admin portal & dashboards — reporting views over the real data now flowing from Phases 4–8. See §21 for the full phase sequence and §22 for what's actually in scope this build.

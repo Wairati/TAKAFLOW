@@ -1,23 +1,38 @@
-import { useEffect, useState } from "react";
-import { createApiClient } from "@takaflow/api-client";
+import { AuthProvider, useAuth } from "./auth";
+import { LoginForm } from "./LoginForm";
+import { CollectionForm } from "./CollectionForm";
+import { OutboxStatus } from "./OutboxStatus";
 
-const api = createApiClient();
+function AuthedApp() {
+  const { user, loading, logout } = useAuth();
 
-function App() {
-  const [status, setStatus] = useState<"checking" | "ok" | "unreachable">("checking");
-
-  useEffect(() => {
-    api
-      .health()
-      .then(() => setStatus("ok"))
-      .catch(() => setStatus("unreachable"));
-  }, []);
+  if (loading) return null;
+  if (!user) return <LoginForm />;
 
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "2rem" }}>
-      <h1>TAKAFLOW — Collection App</h1>
-      <p>Scaffold placeholder. Backend API status: <strong>{status}</strong></p>
+    <main style={{ fontFamily: "sans-serif", maxWidth: 600, margin: "2rem auto", padding: "0 1rem" }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap" }}>
+        <h1 style={{ fontSize: "1.5rem", margin: 0, minWidth: 0 }}>TAKAFLOW — Collection App</h1>
+        <button onClick={logout} style={{ padding: "0.3rem 0.7rem", flexShrink: 0 }}>
+          Sign out
+        </button>
+      </header>
+      <p>
+        Signed in as <strong>{user.full_name}</strong> ({user.role})
+      </p>
+
+      <CollectionForm user={user} />
+      <hr style={{ margin: "2rem 0" }} />
+      <OutboxStatus />
     </main>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AuthedApp />
+    </AuthProvider>
   );
 }
 
