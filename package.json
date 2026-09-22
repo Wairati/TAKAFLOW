@@ -1,0 +1,14 @@
+{
+  "name": "takaflow",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:collection-app": "npm run dev -w apps/collection-app",
+    "dev:admin-portal": "npm run dev -w apps/admin-portal",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  }
+}
