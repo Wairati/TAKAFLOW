@@ -2,7 +2,7 @@
 
 Architecture and scope decisions live in [docs/architecture-blueprint.html](docs/architecture-blueprint.html) — read §22 (MVP) and §25 (resolved contradictions) before touching anything here.
 
-Phases 1–9 (the full core MVP per §22) plus Phase 12 (public site) are done. What remains is polish, not new architecture — see "Next" below.
+Phases 1–9 (the full core MVP per §22), Phase 12 (public site), and Phase 14 (testing hardening) are done. Only deployment (Phase 15) remains — see "Optional next steps" below.
 
 ## Layout
 
@@ -178,8 +178,24 @@ Every must-have item from the blueprint's MVP list is built and verified: auth/R
 
 Verified live: real branch data (name, address, opening hours) and a real rate (15.5/kg) rendered with no authentication at all. `backend/tests/test_public.py` (5 tests) covers the no-auth access, the active-only filter, and the inactive-branch 404. 48/48 backend tests pass.
 
+## Testing hardening (Phase 14, done)
+
+Every prior phase's tests prove that phase's own correctness claim in isolation. This phase went looking specifically at the *seams* — what does one phase assume another already checked? — by re-reading the recording path end to end rather than writing more of the same kind of test.
+
+**Two real bugs found and fixed, not assumed away**: closing a `material_rate` row (§08 challenge 2, Phase 4) is not the same as a material or a branch being *active*, and Phase 6's `record_collection` never checked either flag. Concretely: an admin deactivating a material or a whole branch had **zero effect** on staff's ability to keep recording collections against it — a real gap between "admin turns something off" and "the system actually stops accepting it." Fixed by checking both `is_active` flags before creating a new transaction (an idempotent *replay* of an already-successful transaction still succeeds regardless, per §10's own rule — only genuinely new transactions are checked). This is also, concretely, the "stale reference conflict" scenario §10 describes for offline sync: a device that queued a collection before a material was deactivated now correctly gets a `"conflict"` result when it syncs, instead of a silent, wrong success.
+
+**One fragility fixed before it could bite in production**: the "today's collections" date filter used `func.date(occurred_at)`, which buckets by whatever timezone the *database session* defaults to — on this dev machine that happens to already be `Africa/Nairobi` (inherited from the OS), which made the filter look correct without it actually being guaranteed. A managed Postgres host (Neon/Supabase, §20's deployment target) defaults to UTC, which would have silently misattributed any collection made between midnight and 3am EAT to the previous calendar day once deployed. Fixed by converting explicitly to `Africa/Nairobi` regardless of session default — the business operates in one timezone, so a fixed conversion is simpler and more correct than making it configurable.
+
+**Two claims re-proven at a level closer to reality**: Phase 5 proved atomic-increment concurrency safety directly against the service function; `backend/tests/test_cross_phase_hardening.py` repeats it through the actual HTTP path (10 concurrent `POST /collection-transactions` requests, real per-request DB sessions, final balance exactly 10). It also proves the server never trusts a client-cached rate — there's no rate field in the request at all, so a stale value on a device literally cannot leak into a transaction; whatever's current at insert time is what's used, even if it changed after the device's last sync.
+
+**A leftover pattern, not a leftover**: this is the second phase in a row where checking real behavior surfaced actual stray data or actual logic gaps rather than confirming everything was already fine — worth noting as a reason this kind of pass earns its place even this late in the build.
+
+**Known, not fixed here (a scope decision, not an oversight)**: Phase 7's payment endpoints have no frontend consuming them anywhere — `apps/collection-app` can record a collection but has no UI step to record what the collector was paid for it. The backend is built and tested; wiring it into a screen is new frontend work, not a hardening fix, so it's flagged here rather than folded in silently.
+
+54/54 backend tests pass; no leftover test data.
+
 ## Optional next steps
 
-Nothing left is architecturally required. Phases 10 (buyer portal), 11 (matching & transfers), and 13 (predictive analytics) stay out of scope per §22/§25 — deliberately dropped for this timeline, not forgotten. What's left is hardening and packaging:
-- **Testing hardening** (§21 Phase 14) — the test suite already covers each phase's own correctness claims; a pass looking specifically for gaps *across* phases (e.g. what happens to a payment if its transaction's material is later deactivated) would be the highest-value use of remaining time.
+Nothing left is architecturally required. Phases 10 (buyer portal), 11 (matching & transfers), and 13 (predictive analytics) stay out of scope per §22/§25 — deliberately dropped for this timeline, not forgotten.
 - **Deployment** (§21 Phase 15) — standing up the free-tier hosting from §20 so the app is reachable outside `localhost` for the defense.
+- The payment-recording UI gap noted above, if there's time and it's judged worth it.

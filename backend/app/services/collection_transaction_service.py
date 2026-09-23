@@ -8,8 +8,10 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.models.collection_point import CollectionPoint
 from app.models.collection_transaction import CollectionTransaction
 from app.models.inventory import MovementType
+from app.models.material import Material
 from app.models.user import User
 from app.schemas.collection_transaction import CollectionTransactionCreate, CollectionTransactionOut
 from app.services import inventory_service, material_service
@@ -53,7 +55,25 @@ def record_collection(
         )
     )
     if existing is not None:
+        # Idempotent replay always succeeds regardless of what's changed
+        # since the original was recorded (SS10) - the checks below apply
+        # only to genuinely new transactions.
         return to_out(existing, float(existing.material_rate.rate))
+
+    # Phase 14 hardening: deactivating a branch or a material (Phase 4)
+    # didn't used to stop new collections against it (Phase 6) - closing a
+    # material_rate row isn't the same as the material/point being active,
+    # and get_current_rate only ever checked the former.
+    point = db.get(CollectionPoint, staff.collection_point_id)
+    if point is None or not point.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Your collection point is no longer active"
+        )
+    material = db.get(Material, data.material_id)
+    if material is None or not material.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="This material is no longer active"
+        )
 
     current_rate = material_service.get_current_rate(db, staff.collection_point_id, data.material_id)
     if current_rate is None:
@@ -104,7 +124,18 @@ def list_transactions(
     if on_date is not None:
         # Phase 9: the admin "today's collections" view - filters on the
         # client-reported occurred_at, not created_at/sync time.
-        stmt = stmt.where(func.date(CollectionTransaction.occurred_at) == on_date)
+        #
+        # Phase 14 hardening: func.date() alone buckets by the DATABASE
+        # SESSION's default timezone, not a fixed one - on this dev machine
+        # that happens to already be Africa/Nairobi (inherited from the OS),
+        # which made this look correct without actually being guaranteed to
+        # be. A managed Postgres host (Neon/Supabase, SS20's deployment
+        # target) defaults to UTC, which would misattribute any collection
+        # made between midnight and 3am EAT to the previous calendar day.
+        # The business operates in one timezone, so converting explicitly
+        # is simpler and correct than making this configurable per branch.
+        local_date = func.date(func.timezone("Africa/Nairobi", CollectionTransaction.occurred_at))
+        stmt = stmt.where(local_date == on_date)
 
     rows = db.scalars(stmt).all()
     return [to_out(row, float(row.material_rate.rate)) for row in rows]
