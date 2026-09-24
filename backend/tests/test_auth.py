@@ -21,6 +21,7 @@ def admin_user():
     with SessionLocal() as db:
         user = User(
             email="admin.test@example.com",
+            username="admin.test",
             hashed_password=hash_password(ADMIN_PASSWORD),
             full_name="Test Admin",
             role=UserRole.ADMIN,
@@ -41,6 +42,7 @@ def staff_user():
     with SessionLocal() as db:
         user = User(
             email="staff.test@example.com",
+            employee_number="900001",
             hashed_password=hash_password(STAFF_PASSWORD),
             full_name="Test Staff",
             role=UserRole.COLLECTION_POINT_STAFF,
@@ -56,8 +58,8 @@ def staff_user():
         db.commit()
 
 
-def _login(email: str, password: str) -> dict:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(identifier: str, password: str) -> dict:
+    response = client.post("/api/v1/auth/login", json={"identifier": identifier, "password": password})
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -68,10 +70,16 @@ def test_login_success(admin_user):
     assert "refresh_token" in tokens
 
 
+def test_login_with_username(admin_user):
+    tokens = _login("admin.test", ADMIN_PASSWORD)
+    assert "access_token" in tokens
+    assert "refresh_token" in tokens
+
+
 def test_login_wrong_password(admin_user):
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": "admin.test@example.com", "password": "wrong-password"},
+        json={"identifier": "admin.test@example.com", "password": "wrong-password"},
     )
     assert response.status_code == 401
 
@@ -122,7 +130,8 @@ def test_create_user_requires_admin_role(staff_user):
         "/api/v1/auth/users",
         json={
             "email": "someone.new@example.com",
-            "password": "irrelevant-123",
+            "employee_number": "100001",
+            "password": "Newstaff1!",
             "full_name": "Someone New",
             "role": "collection_point_staff",
         },
@@ -137,7 +146,8 @@ def test_create_user_as_admin(admin_user):
         "/api/v1/auth/users",
         json={
             "email": "new.staff@example.com",
-            "password": "new-staff-password-123",
+            "employee_number": "100002",
+            "password": "Newstaff2!",
             "full_name": "New Staff",
             "role": "collection_point_staff",
         },
@@ -148,4 +158,96 @@ def test_create_user_as_admin(admin_user):
 
     with SessionLocal() as db:
         db.query(User).filter(User.email == "new.staff@example.com").delete()
+        db.commit()
+
+
+def test_login_with_employee_number(staff_user):
+    tokens = _login("900001", STAFF_PASSWORD)
+    assert "access_token" in tokens
+    assert "refresh_token" in tokens
+
+
+def _create_user_payload(**overrides) -> dict:
+    payload = {
+        "email": "format.check@example.com",
+        "employee_number": "200001",
+        "password": "Valid1pass!",
+        "full_name": "Format Check",
+        "role": "collection_point_staff",
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_create_user_rejects_malformed_employee_number(admin_user):
+    tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    response = client.post(
+        "/api/v1/auth/users",
+        json=_create_user_payload(employee_number="12AB56"),
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert response.status_code == 422
+
+
+def test_create_user_rejects_wrong_length_employee_number(admin_user):
+    tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    response = client.post(
+        "/api/v1/auth/users",
+        json=_create_user_payload(employee_number="12345"),
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert response.status_code == 422
+
+
+def test_create_staff_requires_employee_number(admin_user):
+    tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    response = client.post(
+        "/api/v1/auth/users",
+        json=_create_user_payload(employee_number=None),
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "bad_password",
+    [
+        "alllowercase1!",  # no uppercase, and too long (14 chars)
+        "NOLOWERCASE1!",  # no lowercase
+        "NoDigitsHere!",  # no digit
+        "NoSpecial123",  # no special character
+        "Ab1!",  # too short
+        "ThisPassword1!IsTooLong",  # too long
+    ],
+)
+def test_create_user_rejects_weak_password(admin_user, bad_password):
+    tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    response = client.post(
+        "/api/v1/auth/users",
+        json=_create_user_payload(password=bad_password),
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert response.status_code == 422, f"expected rejection for password: {bad_password!r}"
+
+
+def test_create_user_duplicate_employee_number(admin_user):
+    tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+
+    first = client.post(
+        "/api/v1/auth/users",
+        json=_create_user_payload(email="dup.one@example.com", employee_number="300001"),
+        headers=headers,
+    )
+    assert first.status_code == 201, first.text
+
+    second = client.post(
+        "/api/v1/auth/users",
+        json=_create_user_payload(email="dup.two@example.com", employee_number="300001"),
+        headers=headers,
+    )
+    assert second.status_code == 409
+
+    with SessionLocal() as db:
+        db.query(User).filter(User.email == "dup.one@example.com").delete()
         db.commit()

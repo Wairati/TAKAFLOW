@@ -92,7 +92,9 @@ export function useSyncEngine(): { syncNow: () => void; isOnline: boolean } {
   return { syncNow, isOnline };
 }
 
-export async function queueCollection(row: Omit<OutboxRow, "status" | "attempts" | "last_error" | "result">): Promise<void> {
-  await db.outbox.add({ ...row, status: "pending", attempts: 0, last_error: null, result: null });
+export async function queueCollection(
+  row: Omit<OutboxRow, "status" | "attempts" | "last_error" | "result" | "paid">
+): Promise<void> {
+  await db.outbox.add({ ...row, status: "pending", attempts: 0, last_error: null, result: null, paid: false });
   void drainOutbox(); // best-effort immediate attempt; the engine above covers the rest
 }

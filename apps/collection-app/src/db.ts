@@ -19,6 +19,7 @@ export interface OutboxRow {
   last_error: string | null;
   created_at: string;
   result: CollectionTransactionOut | null; // populated once status is "synced"
+  paid: boolean; // a payment can only be recorded once `result` exists (has a real server id)
 }
 
 export interface ReferenceCacheRow {

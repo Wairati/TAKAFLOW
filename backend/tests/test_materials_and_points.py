@@ -33,7 +33,7 @@ def admin_headers():
         user_id = user.id
 
     response = client.post(
-        "/api/v1/auth/login", json={"email": "materials.admin@example.com", "password": ADMIN_PASSWORD}
+        "/api/v1/auth/login", json={"identifier": "materials.admin@example.com", "password": ADMIN_PASSWORD}
     )
     assert response.status_code == 200, response.text
     token = response.json()["access_token"]

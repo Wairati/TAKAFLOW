@@ -12,6 +12,7 @@ import getpass
 from sqlalchemy import select
 
 from app.core.security import hash_password
+from app.core.validation import validate_password_complexity
 from app.db.session import SessionLocal
 from app.models.user import User, UserRole
 
@@ -19,7 +20,14 @@ from app.models.user import User, UserRole
 def main() -> None:
     email = input("Admin email: ").strip()
     full_name = input("Full name: ").strip()
-    password = getpass.getpass("Password: ")
+
+    while True:
+        password = getpass.getpass("Password (8-12 chars, upper+lower+digit+special !@#$%^&*): ")
+        try:
+            validate_password_complexity(password)
+            break
+        except ValueError as exc:
+            print(f"  {exc} — try again.")
 
     with SessionLocal() as db:
         if db.scalar(select(User).where(User.email == email)) is not None:

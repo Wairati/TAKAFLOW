@@ -5,13 +5,14 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, type OutboxStatus as Status } from "./db";
 import { useSyncEngine } from "./sync";
+import { CloudIcon } from "./icons";
 
 const STATUS_COLORS: Record<Status, string> = {
-  pending: "#a67c00",
-  syncing: "#0066cc",
-  synced: "#1a7f37",
-  conflict: "#b35900",
-  error: "#c0392b",
+  pending: "text-amber-600",
+  syncing: "text-sky-600",
+  synced: "text-primary",
+  conflict: "text-orange-600",
+  error: "text-red-600",
 };
 
 const STATUS_LABELS: Record<Status, string> = {
@@ -30,44 +31,47 @@ export function OutboxStatus() {
     (acc, row) => ({ ...acc, [row.status]: (acc[row.status] ?? 0) + 1 }),
     { pending: 0, syncing: 0, synced: 0, conflict: 0, error: 0 }
   );
+  const outstanding = counts.pending + counts.syncing;
 
   return (
-    <section style={{ maxWidth: 480 }}>
-      <h2>Sync status</h2>
-      <p>
-        Connection: <strong style={{ color: isOnline ? "#1a7f37" : "#c0392b" }}>{isOnline ? "online" : "offline"}</strong>
-      </p>
-      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
-        {(Object.keys(STATUS_LABELS) as Status[]).map((status) => (
-          <span key={status} style={{ color: STATUS_COLORS[status] }}>
-            {STATUS_LABELS[status]}: {counts[status]}
-          </span>
-        ))}
+    <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 font-bold text-ink">
+          <CloudIcon className="h-5 w-5 text-primary" />
+          Sync Status
+        </div>
+        <span className={`flex items-center gap-1.5 text-xs font-semibold ${isOnline ? "text-primary" : "text-ink/40"}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-primary" : "bg-ink/30"}`} />
+          {isOnline ? "Online" : "Offline"}
+        </span>
       </div>
-      <button onClick={syncNow} style={{ padding: "0.4rem 0.8rem", marginBottom: "1rem" }}>
+
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-mint/50">
+        <div
+          className="h-full rounded-full bg-primary transition-all"
+          style={{ width: rows.length ? `${(counts.synced / rows.length) * 100}%` : "0%" }}
+        />
+      </div>
+      <p className="mt-2 text-sm text-ink/60">
+        {outstanding > 0 ? `${outstanding} item${outstanding === 1 ? "" : "s"} syncing…` : "Everything is synced."}
+      </p>
+
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold">
+        {(Object.keys(STATUS_LABELS) as Status[])
+          .filter((s) => counts[s] > 0)
+          .map((status) => (
+            <span key={status} className={STATUS_COLORS[status]}>
+              {STATUS_LABELS[status]}: {counts[status]}
+            </span>
+          ))}
+      </div>
+
+      <button
+        onClick={syncNow}
+        className="mt-4 w-full rounded-xl border border-ink/10 py-2 text-sm font-bold text-ink transition hover:bg-black/5"
+      >
         Sync now
       </button>
-
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
-        <thead>
-          <tr style={{ textAlign: "left", borderBottom: "1px solid #ccc" }}>
-            <th>Material</th>
-            <th>Qty</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.client_transaction_uuid} style={{ borderBottom: "1px solid #eee" }}>
-              <td>{row.payload.material_id}</td>
-              <td>{row.payload.quantity}</td>
-              <td style={{ color: STATUS_COLORS[row.status] }} title={row.last_error ?? undefined}>
-                {STATUS_LABELS[row.status]}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
+    </div>
   );
 }

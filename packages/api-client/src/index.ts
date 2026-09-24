@@ -6,9 +6,15 @@ import type {
   CollectionPointOut,
   CollectionTransactionCreate,
   CollectionTransactionOut,
+  InventorySaleCreate,
+  InventorySaleOut,
   InventorySummaryOut,
+  PaymentCreate,
+  PaymentOut,
+  ReportsSummaryOut,
   SyncBatchResponse,
   TokenResponse,
+  UserCreate,
   UserOut,
 } from "@takaflow/types";
 
@@ -67,10 +73,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
 
     health: () => request<{ status: string }>("/health"),
 
-    login: (email: string, password: string) =>
+    login: (identifier: string, password: string) =>
       request<TokenResponse>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       }),
 
     refresh: (refresh_token: string) =>
@@ -86,6 +92,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
       }),
 
     me: () => request<UserOut>("/auth/me"),
+
+    createUser: (data: UserCreate) =>
+      request<UserOut>("/auth/users", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
 
     listAcceptedMaterials: (collectionPointId: number) =>
       request<AcceptedMaterialOut[]>(`/collection-points/${collectionPointId}/materials`),
@@ -109,6 +121,32 @@ export function createApiClient(options: ApiClientOptions = {}) {
       if (params.onDate) query.set("on_date", params.onDate);
       const qs = query.toString();
       return request<CollectionTransactionOut[]>(`/collection-transactions${qs ? `?${qs}` : ""}`);
+    },
+
+    recordPayment: (transactionId: number, data: PaymentCreate) =>
+      request<PaymentOut>(`/collection-transactions/${transactionId}/payments`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+
+    listPayments: (transactionId: number) =>
+      request<PaymentOut[]>(`/collection-transactions/${transactionId}/payments`),
+
+    recordInventorySale: (data: InventorySaleCreate) =>
+      request<InventorySaleOut>("/inventory/sales", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+
+    listInventorySales: (collectionPointId?: number) =>
+      request<InventorySaleOut[]>(
+        `/inventory/sales${collectionPointId !== undefined ? `?collection_point_id=${collectionPointId}` : ""}`
+      ),
+
+    getReportsSummary: (params: { fromDate: string; toDate: string; collectionPointId?: number }) => {
+      const query = new URLSearchParams({ from_date: params.fromDate, to_date: params.toDate });
+      if (params.collectionPointId !== undefined) query.set("collection_point_id", String(params.collectionPointId));
+      return request<ReportsSummaryOut>(`/reports/summary?${query.toString()}`);
     },
 
     // Phase 12: no auth required - the public site's data source (§05).

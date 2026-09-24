@@ -3,13 +3,15 @@ derived, fast-read cache of it, kept correct by a single atomic UPDATE per
 write — never a read-then-write in application code. This is deliberately the
 only place in the codebase allowed to touch inventory_summary directly."""
 
+from fastapi import HTTPException, status
 from sqlalchemy import func, select, update as sql_update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.inventory import InventoryLedger, InventorySummary, MovementType
+from app.models.inventory_sale import InventorySale
 from app.models.material import Material
-from app.schemas.inventory import InventorySummaryOut
+from app.schemas.inventory import InventorySaleCreate, InventorySummaryOut
 
 
 def _summary_deltas(movement_type: MovementType, quantity: float) -> tuple[float, float]:
@@ -25,6 +27,10 @@ def _summary_deltas(movement_type: MovementType, quantity: float) -> tuple[float
         if quantity <= 0:
             raise ValueError("A collection quantity must be positive")
         return quantity, 0
+    if movement_type == MovementType.SALE:
+        if quantity <= 0:
+            raise ValueError("A sale quantity must be positive")
+        return -quantity, 0
     if movement_type == MovementType.ADJUSTMENT:
         return quantity, 0  # signed: a downward correction is a negative quantity
     if movement_type == MovementType.RESERVATION:
@@ -164,3 +170,58 @@ def list_summaries(db: Session, *, collection_point_id: int | None) -> list[Inve
         )
         for summary, name, unit in db.execute(stmt).all()
     ]
+
+
+def record_sale(
+    db: Session, collection_point_id: int | None, data: InventorySaleCreate, recorded_by_user_id: int
+) -> InventorySale:
+    """Records material leaving the branch (sold/dispatched onward) and posts
+    the matching SALE movement to the same ledger a collection posts to — the
+    outbound counterpart of collection_transaction_service.record_collection."""
+    if collection_point_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Your account has no assigned collection point — ask an admin to set one",
+        )
+    if data.quantity <= 0:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Quantity must be positive")
+
+    sale = InventorySale(
+        collection_point_id=collection_point_id,
+        material_id=data.material_id,
+        quantity=data.quantity,
+        sold_to=data.sold_to,
+        recorded_by_user_id=recorded_by_user_id,
+    )
+    db.add(sale)
+    db.flush()  # assign sale.id for the ledger's reference_id
+
+    try:
+        post_movement(
+            db,
+            collection_point_id=collection_point_id,
+            material_id=data.material_id,
+            movement_type=MovementType.SALE,
+            quantity=data.quantity,
+            reference_type="inventory_sale",
+            reference_id=sale.id,
+        )
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Not enough of that material on hand for this sale",
+        ) from exc
+
+    db.commit()
+    db.refresh(sale)
+    return sale
+
+
+def list_sales(db: Session, collection_point_id: int) -> list[InventorySale]:
+    stmt = (
+        select(InventorySale)
+        .where(InventorySale.collection_point_id == collection_point_id)
+        .order_by(InventorySale.created_at.desc())
+    )
+    return list(db.scalars(stmt))

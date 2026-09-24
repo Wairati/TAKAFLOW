@@ -6,9 +6,21 @@ export type UserRole = "admin" | "collection_point_staff";
 export interface UserOut {
   id: number;
   email: string;
+  username: string | null;
+  employee_number: string | null;
   full_name: string;
   role: UserRole;
   collection_point_id: number | null;
+}
+
+export interface UserCreate {
+  email: string;
+  username?: string | null;
+  employee_number?: string | null;
+  password: string;
+  full_name: string;
+  role: UserRole;
+  collection_point_id?: number | null;
 }
 
 export interface TokenResponse {
@@ -100,4 +112,54 @@ export interface InventorySummaryOut {
   quantity_on_hand: number;
   quantity_reserved: number;
   updated_at: string;
+}
+
+export type PaymentMethod = "mpesa" | "cash";
+
+export interface PaymentCreate {
+  method: PaymentMethod;
+  amount: number;
+  reference_number?: string | null;
+}
+
+export interface PaymentOut {
+  id: number;
+  collection_transaction_id: number;
+  method: PaymentMethod;
+  amount: number;
+  reference_number: string | null;
+  created_at: string;
+}
+
+export interface InventorySaleCreate {
+  material_id: number;
+  quantity: number;
+  sold_to?: string | null;
+}
+
+export interface InventorySaleOut {
+  id: number;
+  collection_point_id: number;
+  material_id: number;
+  quantity: number;
+  sold_to: string | null;
+  recorded_by_user_id: number;
+  created_at: string;
+}
+
+export interface MaterialTotal {
+  material_id: number;
+  material_name: string;
+  quantity: number;
+}
+
+export interface ReportsSummaryOut {
+  collection_point_id: number;
+  from_date: string;
+  to_date: string;
+  total_collected_quantity: number;
+  collected_by_material: MaterialTotal[];
+  total_sold_quantity: number;
+  sold_by_material: MaterialTotal[];
+  total_payments_amount: number;
 }

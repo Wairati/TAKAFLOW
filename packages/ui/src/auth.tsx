@@ -16,7 +16,7 @@ interface AuthState {
   user: UserOut | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -47,10 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  async function login(email: string, password: string) {
+  async function login(identifier: string, password: string) {
     setError(null);
     try {
-      const tokens = await api.login(email, password);
+      const tokens = await api.login(identifier, password);
       localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
       api.setAccessToken(tokens.access_token);
       setUser(await api.me());

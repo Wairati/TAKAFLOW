@@ -26,7 +26,7 @@ STAFF_PASSWORD = "staff-test-password-123"
 
 
 def _login(email: str, password: str) -> dict:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    response = client.post("/api/v1/auth/login", json={"identifier": email, "password": password})
     assert response.status_code == 200, response.text
     return {"Authorization": f"Bearer {response.json()['access_token']}"}
 

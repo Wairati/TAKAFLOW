@@ -5,6 +5,7 @@ from app.models.collection_point import CollectionPoint
 from app.models.collection_transaction import CollectionTransaction
 from app.models.device import Device
 from app.models.inventory import InventoryLedger, InventorySummary
+from app.models.inventory_sale import InventorySale
 from app.models.material import CollectionPointMaterial, Material, MaterialRate
 from app.models.payment import Payment
 from app.models.refresh_token import RefreshToken
@@ -18,6 +19,7 @@ __all__ = [
     "CollectionTransaction",
     "Device",
     "InventoryLedger",
+    "InventorySale",
     "InventorySummary",
     "Material",
     "MaterialRate",

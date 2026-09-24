@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.security import (
@@ -33,11 +33,19 @@ def _issue_token_pair(db: Session, user: User) -> TokenResponse:
     return TokenResponse(access_token=access_token, refresh_token=raw_refresh_token)
 
 
-def authenticate(db: Session, email: str, password: str) -> TokenResponse:
-    user = db.scalar(select(User).where(User.email == email))
+def authenticate(db: Session, identifier: str, password: str) -> TokenResponse:
+    user = db.scalar(
+        select(User).where(
+            or_(
+                User.email == identifier,
+                User.username == identifier,
+                User.employee_number == identifier,
+            )
+        )
+    )
     if user is None or not user.is_active or not verify_password(password, user.hashed_password):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
 
     user.last_login_at = datetime.now(timezone.utc)
@@ -82,9 +90,18 @@ def revoke(db: Session, raw_refresh_token: str) -> None:
 def create_user(db: Session, data: UserCreate) -> User:
     if db.scalar(select(User).where(User.email == data.email)) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+    if data.username is not None and db.scalar(select(User).where(User.username == data.username)) is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken")
+    if (
+        data.employee_number is not None
+        and db.scalar(select(User).where(User.employee_number == data.employee_number)) is not None
+    ):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Employee number already in use")
 
     user = User(
         email=data.email,
+        username=data.username,
+        employee_number=data.employee_number,
         hashed_password=hash_password(data.password),
         full_name=data.full_name,
         role=data.role,

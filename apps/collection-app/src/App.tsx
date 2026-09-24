@@ -1,29 +1,71 @@
+import { useState } from "react";
 import { AuthProvider, useAuth, LoginForm } from "@takaflow/ui";
+import { useOnlineStatus } from "./sync";
+import { useBranch } from "./useBranch";
+import { Sidebar } from "./Sidebar";
+import { TopBar } from "./TopBar";
+import { Dashboard } from "./Dashboard";
 import { CollectionForm } from "./CollectionForm";
-import { OutboxStatus } from "./OutboxStatus";
+import { Inventory } from "./Inventory";
+import { Collectors } from "./Collectors";
+import { History } from "./History";
+import { Reports } from "./Reports";
+
+export type Page = "dashboard" | "log-collection" | "inventory" | "collectors" | "history" | "reports";
+
+const PAGE_TITLE: Record<Page, string> = {
+  dashboard: "Dashboard",
+  "log-collection": "Log Collection",
+  inventory: "Inventory",
+  collectors: "Collectors",
+  history: "History",
+  reports: "Reports",
+};
 
 function AuthedApp() {
   const { user, loading, logout } = useAuth();
+  const [page, setPage] = useState<Page>("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isOnline = useOnlineStatus();
+  const branch = useBranch(user?.collection_point_id ?? null);
 
   if (loading) return null;
-  if (!user) return <LoginForm title="TAKAFLOW — Collection App" />;
+  if (!user)
+    return (
+      <LoginForm
+        eyebrow="Collection Point System"
+        subtitle="Sign in with your employee number to manage collections, verify materials, and keep your collection point moving."
+        footerLabel="TAKAFLOW POS · v1.0"
+        photoCaption="Every collection you log keeps material out of the dump and puts money in someone's hands."
+        photoSrc="/images/cleanup-1.jpg"
+        photoAlt="Volunteers clearing plastic waste from a drainage channel"
+        identifierMode="employeeNumber"
+      />
+    );
 
   return (
-    <main style={{ fontFamily: "sans-serif", maxWidth: 600, margin: "2rem auto", padding: "0 1rem" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap" }}>
-        <h1 style={{ fontSize: "1.5rem", margin: 0, minWidth: 0 }}>TAKAFLOW — Collection App</h1>
-        <button onClick={logout} style={{ padding: "0.3rem 0.7rem", flexShrink: 0 }}>
-          Sign out
-        </button>
-      </header>
-      <p>
-        Signed in as <strong>{user.full_name}</strong> ({user.role})
-      </p>
-
-      <CollectionForm user={user} />
-      <hr style={{ margin: "2rem 0" }} />
-      <OutboxStatus />
-    </main>
+    <div className="flex min-h-screen bg-mist/10">
+      <Sidebar
+        page={page}
+        onNavigate={setPage}
+        branchName={branch?.name ?? "Unassigned"}
+        isOnline={isOnline}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar user={user} onMenuClick={() => setSidebarOpen(true)} onSignOut={logout} />
+        <main className="flex-1 overflow-y-auto p-5 sm:p-8">
+          <h1 className="mb-5 text-2xl font-extrabold text-ink">{PAGE_TITLE[page]}</h1>
+          {page === "dashboard" && <Dashboard user={user} branch={branch} onNavigate={setPage} />}
+          {page === "log-collection" && <CollectionForm user={user} />}
+          {page === "inventory" && <Inventory user={user} />}
+          {page === "collectors" && <Collectors user={user} />}
+          {page === "history" && <History user={user} />}
+          {page === "reports" && <Reports user={user} />}
+        </main>
+      </div>
+    </div>
   );
 }
 

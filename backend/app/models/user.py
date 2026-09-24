@@ -20,6 +20,14 @@ class User(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    # Optional second login identifier alongside email (login accepts either).
+    # Nullable so existing/admin-provisioned accounts aren't forced to have one.
+    username: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    # Collection-point staff log in with this instead of email/username (the
+    # collection-app's login screen only ever collects this field). Nullable
+    # at the DB level since admins don't have one — required-for-staff is
+    # enforced in UserCreate, not here.
+    employee_number: Mapped[str | None] = mapped_column(String(6), unique=True, nullable=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole, name="user_role"), nullable=False)

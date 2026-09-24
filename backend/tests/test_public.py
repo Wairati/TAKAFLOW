@@ -31,7 +31,7 @@ def admin_headers():
         db.refresh(user)
         user_id = user.id
 
-    response = client.post("/api/v1/auth/login", json={"email": "public.admin@example.com", "password": ADMIN_PASSWORD})
+    response = client.post("/api/v1/auth/login", json={"identifier": "public.admin@example.com", "password": ADMIN_PASSWORD})
     headers = {"Authorization": f"Bearer {response.json()['access_token']}"}
 
     yield headers

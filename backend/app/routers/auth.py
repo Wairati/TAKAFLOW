@@ -12,7 +12,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
-    return auth_service.authenticate(db, data.email, data.password)
+    return auth_service.authenticate(db, data.identifier, data.password)
 
 
 @router.post("/refresh", response_model=TokenResponse)

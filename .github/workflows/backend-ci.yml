@@ -1,8 +1,10 @@
+#this yml file is used to define the workflow for the backend continuous integration (CI) process.
+#It specifies the conditions under which the workflow should be triggered, the jobs to be executed, and the steps within each job.
 name: backend-ci
 
-on:
+on: 
   push:
-    paths: ["backend/**", ".github/workflows/backend-ci.yml"]
+    paths: ["backend/**", ".github/workflows/backend-ci.yml"] 
   pull_request:
     paths: ["backend/**", ".github/workflows/backend-ci.yml"]
 
@@ -12,14 +14,14 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:18
         env:
-          POSTGRES_USER: takaflow
-          POSTGRES_PASSWORD: takaflow
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-test-password
           POSTGRES_DB: takaflow_test
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U takaflow"
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -28,8 +30,8 @@ jobs:
       run:
         working-directory: backend
 
-    env:
-      DATABASE_URL: postgresql+psycopg://takaflow:takaflow@localhost:5432/takaflow_test
+    env: 
+      DATABASE_URL: postgresql+psycopg://postgres:ci-test-password@localhost:5432/takaflow_test
       JWT_SECRET_KEY: ci-test-secret
 
     steps:

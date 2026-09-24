@@ -8,11 +8,13 @@ from app.db.base import Base, TimestampMixin
 
 
 class MovementType(str, enum.Enum):
-    """§11. Only COLLECTION and ADJUSTMENT are actually produced by this build's
-    code (matching/transfers are deferred, §22) — the rest of the enum exists
-    now so the ledger's shape doesn't need a migration when that work resumes."""
+    """§11. COLLECTION, SALE, and ADJUSTMENT are the movement types actually
+    produced by this build's code — the rest of the enum exists now so the
+    ledger's shape doesn't need a migration when that (deferred, §22)
+    matching/transfers work resumes."""
 
     COLLECTION = "collection"
+    SALE = "sale"
     TRANSFER_OUT = "transfer_out"
     RESERVATION = "reservation"
     RESERVATION_RELEASE = "reservation_release"
