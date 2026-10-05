@@ -24,3 +24,13 @@ body {
   font-family: var(--font-sans);
   color: var(--color-ink);
 }
+
+/* Chrome/Edge skip background colors and SVG fills by default when printing
+   — without this, "Download PDF" on Reports would come out as bare outlines,
+   no chart colors at all. */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

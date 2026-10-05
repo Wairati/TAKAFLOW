@@ -9,9 +9,11 @@ import { CollectionForm } from "./CollectionForm";
 import { Inventory } from "./Inventory";
 import { Collectors } from "./Collectors";
 import { History } from "./History";
-import { Reports } from "./Reports";
+import { BuyerOrders } from "./BuyerOrders";
 
-export type Page = "dashboard" | "log-collection" | "inventory" | "collectors" | "history" | "reports";
+// Reports (company-wide/branch analytics) is admin-only — see admin-portal
+// instead. Staff never had a reason to see it here.
+export type Page = "dashboard" | "log-collection" | "inventory" | "collectors" | "history" | "buyer-orders";
 
 const PAGE_TITLE: Record<Page, string> = {
   dashboard: "Dashboard",
@@ -19,7 +21,7 @@ const PAGE_TITLE: Record<Page, string> = {
   inventory: "Inventory",
   collectors: "Collectors",
   history: "History",
-  reports: "Reports",
+  "buyer-orders": "Buyer Orders",
 };
 
 function AuthedApp() {
@@ -44,7 +46,7 @@ function AuthedApp() {
     );
 
   return (
-    <div className="flex min-h-screen bg-mist/10">
+    <div className="flex h-screen overflow-hidden bg-mist/10">
       <Sidebar
         page={page}
         onNavigate={setPage}
@@ -53,16 +55,16 @@ function AuthedApp() {
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <TopBar user={user} onMenuClick={() => setSidebarOpen(true)} onSignOut={logout} />
-        <main className="flex-1 overflow-y-auto p-5 sm:p-8">
+        <main className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-8">
           <h1 className="mb-5 text-2xl font-extrabold text-ink">{PAGE_TITLE[page]}</h1>
           {page === "dashboard" && <Dashboard user={user} branch={branch} onNavigate={setPage} />}
           {page === "log-collection" && <CollectionForm user={user} />}
           {page === "inventory" && <Inventory user={user} />}
           {page === "collectors" && <Collectors user={user} />}
           {page === "history" && <History user={user} />}
-          {page === "reports" && <Reports user={user} />}
+          {page === "buyer-orders" && <BuyerOrders user={user} />}
         </main>
       </div>
     </div>

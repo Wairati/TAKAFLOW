@@ -19,7 +19,7 @@ export function TopBar({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="flex items-center justify-between border-b border-black/5 bg-white px-5 py-3.5">
+    <header className="flex items-center justify-between border-b border-black/5 bg-white px-5 py-3.5 print:hidden">
       <button onClick={onMenuClick} className="rounded-lg p-2 text-ink/60 hover:bg-black/5 lg:hidden">
         <MenuIcon className="h-6 w-6" />
       </button>

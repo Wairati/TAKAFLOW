@@ -251,3 +251,147 @@ def test_create_user_duplicate_employee_number(admin_user):
     with SessionLocal() as db:
         db.query(User).filter(User.email == "dup.one@example.com").delete()
         db.commit()
+
+
+@pytest.mark.parametrize(
+    "bad_name",
+    ["12345", "John123", "4", "!!!"],
+)
+def test_create_user_rejects_invalid_full_name(admin_user, bad_name):
+    tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    response = client.post(
+        "/api/v1/auth/users",
+        json=_create_user_payload(full_name=bad_name),
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert response.status_code == 422, f"expected rejection for full_name: {bad_name!r}"
+
+
+def test_create_user_accepts_hyphenated_apostrophe_name(admin_user):
+    tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    response = client.post(
+        "/api/v1/auth/users",
+        json=_create_user_payload(email="ok.name@example.com", employee_number="400002", full_name="Mary-Jane O'Brien"),
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert response.status_code == 201, response.text
+
+    with SessionLocal() as db:
+        db.query(User).filter(User.email == "ok.name@example.com").delete()
+        db.commit()
+
+
+def test_list_users_requires_admin(staff_user):
+    tokens = _login("staff.test@example.com", STAFF_PASSWORD)
+    response = client.get("/api/v1/auth/users", headers={"Authorization": f"Bearer {tokens['access_token']}"})
+    assert response.status_code == 403
+
+
+def test_list_users_as_admin(admin_user, staff_user):
+    tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    response = client.get("/api/v1/auth/users", headers={"Authorization": f"Bearer {tokens['access_token']}"})
+    assert response.status_code == 200
+    emails = [u["email"] for u in response.json()]
+    assert "staff.test@example.com" in emails
+    assert "admin.test@example.com" in emails
+
+
+def test_deactivate_blocks_login(admin_user, staff_user):
+    admin_tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    admin_headers = {"Authorization": f"Bearer {admin_tokens['access_token']}"}
+
+    deactivate = client.post(f"/api/v1/auth/users/{staff_user}/deactivate", headers=admin_headers)
+    assert deactivate.status_code == 200, deactivate.text
+    assert deactivate.json()["is_active"] is False
+
+    blocked = client.post(
+        "/api/v1/auth/login", json={"identifier": "staff.test@example.com", "password": STAFF_PASSWORD}
+    )
+    assert blocked.status_code == 401
+
+    reactivate = client.post(f"/api/v1/auth/users/{staff_user}/reactivate", headers=admin_headers)
+    assert reactivate.status_code == 200
+    assert reactivate.json()["is_active"] is True
+
+    restored = client.post(
+        "/api/v1/auth/login", json={"identifier": "staff.test@example.com", "password": STAFF_PASSWORD}
+    )
+    assert restored.status_code == 200
+
+
+def test_deactivate_revokes_existing_refresh_token(admin_user, staff_user):
+    admin_tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    admin_headers = {"Authorization": f"Bearer {admin_tokens['access_token']}"}
+    staff_tokens = _login("staff.test@example.com", STAFF_PASSWORD)
+
+    client.post(f"/api/v1/auth/users/{staff_user}/deactivate", headers=admin_headers)
+
+    refresh_attempt = client.post("/api/v1/auth/refresh", json={"refresh_token": staff_tokens["refresh_token"]})
+    assert refresh_attempt.status_code == 401
+
+    client.post(f"/api/v1/auth/users/{staff_user}/reactivate", headers=admin_headers)
+
+
+def test_admin_cannot_deactivate_self(admin_user):
+    tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    response = client.post(
+        f"/api/v1/auth/users/{admin_user}/deactivate", headers={"Authorization": f"Bearer {tokens['access_token']}"}
+    )
+    assert response.status_code == 400
+
+
+def test_reset_password_requires_admin(staff_user):
+    tokens = _login("staff.test@example.com", STAFF_PASSWORD)
+    response = client.post(
+        f"/api/v1/auth/users/{staff_user}/reset-password",
+        json={"new_password": "NewPass1!"},
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert response.status_code == 403
+
+
+def test_reset_password_changes_credential(admin_user, staff_user):
+    admin_tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    admin_headers = {"Authorization": f"Bearer {admin_tokens['access_token']}"}
+
+    response = client.post(
+        f"/api/v1/auth/users/{staff_user}/reset-password",
+        json={"new_password": "NewPass1!"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 200, response.text
+
+    old_password_attempt = client.post(
+        "/api/v1/auth/login", json={"identifier": "staff.test@example.com", "password": STAFF_PASSWORD}
+    )
+    assert old_password_attempt.status_code == 401
+
+    new_password_attempt = client.post(
+        "/api/v1/auth/login", json={"identifier": "staff.test@example.com", "password": "NewPass1!"}
+    )
+    assert new_password_attempt.status_code == 200
+
+
+def test_reset_password_revokes_existing_refresh_token(admin_user, staff_user):
+    admin_tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    admin_headers = {"Authorization": f"Bearer {admin_tokens['access_token']}"}
+    staff_tokens = _login("staff.test@example.com", STAFF_PASSWORD)
+
+    client.post(
+        f"/api/v1/auth/users/{staff_user}/reset-password",
+        json={"new_password": "NewPass1!"},
+        headers=admin_headers,
+    )
+
+    refresh_attempt = client.post("/api/v1/auth/refresh", json={"refresh_token": staff_tokens["refresh_token"]})
+    assert refresh_attempt.status_code == 401
+
+
+def test_reset_password_rejects_weak_password(admin_user, staff_user):
+    tokens = _login("admin.test@example.com", ADMIN_PASSWORD)
+    response = client.post(
+        f"/api/v1/auth/users/{staff_user}/reset-password",
+        json={"new_password": "weak"},
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert response.status_code == 422

@@ -17,6 +17,7 @@ from app.models.collection_point import CollectionPoint
 from app.models.collection_transaction import CollectionTransaction
 from app.models.inventory import InventoryLedger, InventorySummary
 from app.models.material import CollectionPointMaterial, Material, MaterialRate
+from app.models.partner import Partner
 from app.models.refresh_token import RefreshToken
 from app.models.user import User, UserRole
 from app.services import inventory_service
@@ -140,7 +141,6 @@ def test_record_collection_updates_ledger_and_summary(staff_headers, point_with_
             "client_transaction_uuid": str(uuid.uuid4()),
             "material_id": material_id,
             "quantity": 7.5,
-            "grade": "clean",
             "collector_name": "Walk-in Collector",
         },
         headers=staff_headers,
@@ -230,3 +230,232 @@ def test_admin_can_list_all_transactions(staff_headers, admin_headers, point_wit
     )
     assert response.status_code == 200
     assert len(response.json()) == 1
+
+
+def test_collector_phone_rejects_more_than_ten_digits(staff_headers, point_with_material):
+    _, material_id = point_with_material
+    response = client.post(
+        "/api/v1/collection-transactions",
+        json={
+            "client_transaction_uuid": str(uuid.uuid4()),
+            "material_id": material_id,
+            "quantity": 2,
+            "collector_phone": "012345678901",
+        },
+        headers=staff_headers,
+    )
+    assert response.status_code == 422
+
+
+def test_collector_phone_rejects_non_digits(staff_headers, point_with_material):
+    _, material_id = point_with_material
+    response = client.post(
+        "/api/v1/collection-transactions",
+        json={
+            "client_transaction_uuid": str(uuid.uuid4()),
+            "material_id": material_id,
+            "quantity": 2,
+            "collector_phone": "07123 45678",
+        },
+        headers=staff_headers,
+    )
+    assert response.status_code == 422
+
+
+def test_collector_phone_accepts_ten_digits(staff_headers, point_with_material):
+    _, material_id = point_with_material
+    response = client.post(
+        "/api/v1/collection-transactions",
+        json={
+            "client_transaction_uuid": str(uuid.uuid4()),
+            "material_id": material_id,
+            "quantity": 2,
+            "collector_phone": "0712345678",
+        },
+        headers=staff_headers,
+    )
+    assert response.status_code == 201, response.text
+
+
+# ---- Grade-based pricing ----
+
+
+def test_different_grades_charge_different_rates(admin_headers, staff_headers, point_with_material):
+    point_id, material_id = point_with_material
+    client.post(
+        f"/api/v1/collection-points/{point_id}/materials",
+        json={"material_id": material_id, "rate": 25.0, "grade": "Grade A"},
+        headers=admin_headers,
+    )
+    client.post(
+        f"/api/v1/collection-points/{point_id}/materials",
+        json={"material_id": material_id, "rate": 8.0, "grade": "Mixed"},
+        headers=admin_headers,
+    )
+
+    grade_a = client.post(
+        "/api/v1/collection-transactions",
+        json={
+            "client_transaction_uuid": str(uuid.uuid4()),
+            "material_id": material_id,
+            "quantity": 10,
+            "grade": "Grade A",
+        },
+        headers=staff_headers,
+    )
+    assert grade_a.status_code == 201, grade_a.text
+    assert grade_a.json()["rate"] == 25.0
+
+    mixed = client.post(
+        "/api/v1/collection-transactions",
+        json={
+            "client_transaction_uuid": str(uuid.uuid4()),
+            "material_id": material_id,
+            "quantity": 10,
+            "grade": "Mixed",
+        },
+        headers=staff_headers,
+    )
+    assert mixed.status_code == 201, mixed.text
+    assert mixed.json()["rate"] == 8.0
+
+    # The material's original ungraded rate (20.0, from the fixture) still
+    # works too - graded tiers coexist with it, they don't replace it.
+    ungraded = client.post(
+        "/api/v1/collection-transactions",
+        json={"client_transaction_uuid": str(uuid.uuid4()), "material_id": material_id, "quantity": 10},
+        headers=staff_headers,
+    )
+    assert ungraded.status_code == 201, ungraded.text
+    assert ungraded.json()["rate"] == 20.0
+
+
+def test_unconfigured_grade_is_rejected(staff_headers, point_with_material):
+    _, material_id = point_with_material
+    response = client.post(
+        "/api/v1/collection-transactions",
+        json={
+            "client_transaction_uuid": str(uuid.uuid4()),
+            "material_id": material_id,
+            "quantity": 10,
+            "grade": "Nonexistent Grade",
+        },
+        headers=staff_headers,
+    )
+    assert response.status_code == 409
+    assert "not a configured grade" in response.json()["detail"]
+
+
+def test_grade_required_when_material_has_only_graded_rates(admin_headers, staff_headers, point_with_material):
+    point_id, material_id = point_with_material
+    # Give this material ONLY a graded rate by retiring the fixture's
+    # ungraded one and accepting a graded one in its place.
+    client.delete(f"/api/v1/collection-points/{point_id}/materials/{material_id}", headers=admin_headers)
+    client.post(
+        f"/api/v1/collection-points/{point_id}/materials",
+        json={"material_id": material_id, "rate": 25.0, "grade": "Grade A"},
+        headers=admin_headers,
+    )
+
+    response = client.post(
+        "/api/v1/collection-transactions",
+        json={"client_transaction_uuid": str(uuid.uuid4()), "material_id": material_id, "quantity": 10},
+        headers=staff_headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Select a grade for this material"
+
+
+# ---- Collaborative collections (partner organisations, no payment) --------
+
+
+@pytest.fixture
+def partner(admin_headers):
+    response = client.post(
+        "/api/v1/partners", json={"name": "CT Test Conservation Group"}, headers=admin_headers
+    )
+    assert response.status_code == 201, response.text
+    partner_id = response.json()["id"]
+    yield partner_id
+    with SessionLocal() as db:
+        # This fixture doesn't depend on point_with_material, so pytest's
+        # LIFO teardown order doesn't guarantee that fixture's
+        # CollectionTransaction cleanup has already run — delete any
+        # transactions referencing this partner here too, or the FK on
+        # collection_transaction.partner_id blocks deleting the row below.
+        db.query(CollectionTransaction).filter(CollectionTransaction.partner_id == partner_id).delete()
+        db.query(Partner).filter(Partner.id == partner_id).delete()
+        db.commit()
+
+
+def test_collaborative_collection_skips_rate_and_still_updates_inventory(staff_headers, point_with_material, partner):
+    point_id, material_id = point_with_material
+    response = client.post(
+        "/api/v1/collection-transactions",
+        json={
+            "client_transaction_uuid": str(uuid.uuid4()),
+            "material_id": material_id,
+            "quantity": 12,
+            "partner_id": partner,
+        },
+        headers=staff_headers,
+    )
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["partner_id"] == partner
+    assert body["material_rate_id"] is None
+    assert body["rate"] is None
+
+    summary = client.get(
+        "/api/v1/inventory/summary", params={"collection_point_id": point_id}, headers=staff_headers
+    ).json()
+    assert summary[0]["quantity_on_hand"] == 12.0
+
+
+def test_collaborative_collection_works_even_with_no_configured_rate(admin_headers, staff_headers, point_with_material, partner):
+    point_id, material_id = point_with_material
+    # Retire the fixture's rate entirely — a collaborative collection must
+    # not require the material to have any priced rate at the branch.
+    client.delete(f"/api/v1/collection-points/{point_id}/materials/{material_id}", headers=admin_headers)
+
+    response = client.post(
+        "/api/v1/collection-transactions",
+        json={
+            "client_transaction_uuid": str(uuid.uuid4()),
+            "material_id": material_id,
+            "quantity": 5,
+            "partner_id": partner,
+        },
+        headers=staff_headers,
+    )
+    assert response.status_code == 201, response.text
+
+
+def test_cannot_record_payment_against_a_collaborative_collection(staff_headers, point_with_material, partner):
+    _, material_id = point_with_material
+    tx_resp = client.post(
+        "/api/v1/collection-transactions",
+        json={"client_transaction_uuid": str(uuid.uuid4()), "material_id": material_id, "quantity": 5, "partner_id": partner},
+        headers=staff_headers,
+    )
+    tx_id = tx_resp.json()["id"]
+
+    response = client.post(
+        f"/api/v1/collection-transactions/{tx_id}/payments",
+        json={"method": "cash", "amount": 50},
+        headers=staff_headers,
+    )
+    assert response.status_code == 409
+    assert "collaborative" in response.json()["detail"].lower()
+
+
+def test_inactive_partner_is_rejected(admin_headers, staff_headers, point_with_material, partner):
+    _, material_id = point_with_material
+    client.patch(f"/api/v1/partners/{partner}", json={"is_active": False}, headers=admin_headers)
+
+    response = client.post(
+        "/api/v1/collection-transactions",
+        json={"client_transaction_uuid": str(uuid.uuid4()), "material_id": material_id, "quantity": 5, "partner_id": partner},
+        headers=staff_headers,
+    )
+    assert response.status_code == 409

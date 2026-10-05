@@ -105,8 +105,40 @@ def test_accept_material_sets_current_rate(admin_headers, material, point):
     )
     assert response.status_code == 201, response.text
     body = response.json()
-    assert body["current_rate"]["rate"] == 15.5
-    assert body["current_rate"]["effective_to"] is None
+    assert len(body["rates"]) == 1
+    assert body["rates"][0]["rate"] == 15.5
+    assert body["rates"][0]["grade"] is None
+    assert body["rates"][0]["effective_to"] is None
+
+
+def test_accept_material_twice_for_same_grade_conflicts(admin_headers, material, point):
+    client.post(
+        f"/api/v1/collection-points/{point}/materials",
+        json={"material_id": material, "rate": 15.5},
+        headers=admin_headers,
+    )
+    response = client.post(
+        f"/api/v1/collection-points/{point}/materials",
+        json={"material_id": material, "rate": 20.0},
+        headers=admin_headers,
+    )
+    assert response.status_code == 409
+
+
+def test_material_can_have_multiple_graded_rates(admin_headers, material, point):
+    client.post(
+        f"/api/v1/collection-points/{point}/materials",
+        json={"material_id": material, "rate": 10.0, "grade": "Grade A"},
+        headers=admin_headers,
+    )
+    response = client.post(
+        f"/api/v1/collection-points/{point}/materials",
+        json={"material_id": material, "rate": 6.0, "grade": "Mixed"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 201, response.text
+    rates_by_grade = {r["grade"]: r["rate"] for r in response.json()["rates"]}
+    assert rates_by_grade == {"Grade A": 10.0, "Mixed": 6.0}
 
 
 def test_change_rate_rotates_history(admin_headers, material, point):
@@ -132,6 +164,32 @@ def test_change_rate_rotates_history(admin_headers, material, point):
     rates_by_value = {row["rate"]: row for row in history}
     assert rates_by_value[10.0]["effective_to"] is not None  # closed out
     assert rates_by_value[12.0]["effective_to"] is None  # current
+
+
+def test_change_rate_targets_the_right_grade(admin_headers, material, point):
+    client.post(
+        f"/api/v1/collection-points/{point}/materials",
+        json={"material_id": material, "rate": 10.0, "grade": "Grade A"},
+        headers=admin_headers,
+    )
+    client.post(
+        f"/api/v1/collection-points/{point}/materials",
+        json={"material_id": material, "rate": 6.0, "grade": "Mixed"},
+        headers=admin_headers,
+    )
+
+    response = client.patch(
+        f"/api/v1/collection-points/{point}/materials/{material}/rate",
+        json={"rate": 11.0, "grade": "Grade A"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["rate"] == 11.0
+    assert response.json()["grade"] == "Grade A"
+
+    accepted = client.get(f"/api/v1/collection-points/{point}/materials", headers=admin_headers).json()
+    rates_by_grade = {r["grade"]: r["rate"] for r in accepted[0]["rates"]}
+    assert rates_by_grade == {"Grade A": 11.0, "Mixed": 6.0}  # Mixed untouched
 
 
 def test_stop_accepting_closes_rate_and_removes_link(admin_headers, material, point):

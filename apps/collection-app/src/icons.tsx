@@ -77,3 +77,13 @@ export function CloudIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function CartIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8">
+      <path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 2-1.6L20.5 8H6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="10" cy="20.5" r="1.3" />
+      <circle cx="17" cy="20.5" r="1.3" />
+    </svg>
+  );
+}

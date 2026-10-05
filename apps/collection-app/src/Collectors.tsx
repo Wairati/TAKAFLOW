@@ -22,7 +22,11 @@ export function Collectors({ user }: { user: UserOut }) {
     setLoading(true);
     api
       .listCollectionTransactions({ collectionPointId: user.collection_point_id, onDate: todayIso() })
-      .then(async (transactions) => {
+      .then(async (allTransactions) => {
+        // Collaborative collections (partner_id set) have no rate and are
+        // never paid — this page is specifically about walk-in collectors
+        // who are owed money, so they don't belong here.
+        const transactions = allTransactions.filter((t) => !t.partner_id);
         setRows(transactions);
         const entries = await Promise.all(
           transactions.map(async (t) => [t.id, await api.listPayments(t.id)] as const)
@@ -56,7 +60,7 @@ export function Collectors({ user }: { user: UserOut }) {
           {rows.map((t) => {
             const payments = paymentsByTx[t.id] ?? [];
             const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-            const owed = t.rate * t.quantity;
+            const owed = (t.rate ?? 0) * t.quantity;
             const isPaid = totalPaid > 0;
             return (
               <li key={t.id} className="rounded-xl border border-black/5 p-4">

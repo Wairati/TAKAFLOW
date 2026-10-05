@@ -1,13 +1,17 @@
-import { ChartIcon, ClockIcon, HomeIcon, PackageIcon, PeopleIcon } from "./icons";
+import { CartIcon, ChartIcon, ClockIcon, HandshakeIcon, HomeIcon, PackageIcon, PeopleIcon } from "./icons";
 import type { Page } from "./App";
 
 const NAV_ITEMS: { page: Page; label: string; icon: typeof HomeIcon }[] = [
   { page: "dashboard", label: "Dashboard", icon: HomeIcon },
   { page: "staff", label: "Staff", icon: PeopleIcon },
   { page: "inventory", label: "Inventory", icon: PackageIcon },
+  { page: "buyer-orders", label: "Buyer Orders", icon: CartIcon },
+  { page: "partners", label: "Partners", icon: HandshakeIcon },
   { page: "history", label: "History", icon: ClockIcon },
   { page: "reports", label: "Reports", icon: ChartIcon },
 ];
+
+const ADMIN_ONLY_PAGES: Page[] = ["staff", "partners"];
 
 interface SidebarProps {
   page: Page;
@@ -18,12 +22,12 @@ interface SidebarProps {
 }
 
 export function Sidebar({ page, onNavigate, open, onClose, isAdmin }: SidebarProps) {
-  const items = isAdmin ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.page !== "staff");
+  const items = isAdmin ? NAV_ITEMS : NAV_ITEMS.filter((item) => !ADMIN_ONLY_PAGES.includes(item.page));
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col bg-forest px-5 py-6 text-mist transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col overflow-y-auto bg-forest px-5 py-6 text-mist transition-transform lg:static lg:translate-x-0 print:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >

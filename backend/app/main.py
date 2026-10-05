@@ -5,11 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.routers import (
     auth,
+    buyer_orders,
     collection_points,
     collection_transactions,
     health,
     inventory,
     materials,
+    partners,
     public,
     report,
     sync,
@@ -36,3 +38,5 @@ app.include_router(sync.router, prefix=settings.api_v1_prefix)
 app.include_router(inventory.router, prefix=settings.api_v1_prefix)
 app.include_router(report.router, prefix=settings.api_v1_prefix)
 app.include_router(public.router, prefix=settings.api_v1_prefix)
+app.include_router(partners.router, prefix=settings.api_v1_prefix)
+app.include_router(buyer_orders.router, prefix=settings.api_v1_prefix)

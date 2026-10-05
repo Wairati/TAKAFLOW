@@ -28,23 +28,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Exchanges the stored refresh token for a new access token. Used both
+    // on mount (restoring a session) and by the api client itself whenever
+    // an access token has expired mid-request (see setUnauthorizedHandler
+    // below) - the access token is only good for 15 minutes, so this fires
+    // routinely on any page left open a while, not just on reload.
+    async function tryRefresh(): Promise<string | undefined> {
+      const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+      if (!storedRefreshToken) return undefined;
+      try {
+        const tokens = await api.refresh(storedRefreshToken);
+        localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
+        api.setAccessToken(tokens.access_token);
+        return tokens.access_token;
+      } catch {
+        // The refresh token itself is invalid/expired/revoked - there's no
+        // recovering this session silently, so fall back to the login screen
+        // instead of leaving every subsequent request failing quietly.
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        api.setAccessToken(undefined);
+        setUser(null);
+        return undefined;
+      }
+    }
+
+    api.setUnauthorizedHandler(tryRefresh);
+
     const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
     if (!storedRefreshToken) {
       setLoading(false);
       return;
     }
 
-    api
-      .refresh(storedRefreshToken)
-      .then(async (tokens) => {
-        localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
-        api.setAccessToken(tokens.access_token);
-        setUser(await api.me());
-      })
-      .catch(() => {
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
+    tryRefresh()
+      .then(async (accessToken) => {
+        if (accessToken) setUser(await api.me());
       })
       .finally(() => setLoading(false));
+
+    return () => api.setUnauthorizedHandler(undefined);
   }, []);
 
   async function login(identifier: string, password: string) {

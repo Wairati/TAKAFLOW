@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api, useAuth } from "./auth";
-import { EMPLOYEE_NUMBER_LENGTH, isValidEmployeeNumber, keepDigits } from "./validation";
+import { EMPLOYEE_NUMBER_LENGTH, isValidEmail, isValidEmployeeNumber, keepDigits } from "./validation";
+import { EyeIcon } from "./icons";
 
 export interface LoginFormProps {
   /** Small bold label above "Welcome back", e.g. "Collection Point System". */
@@ -14,25 +15,11 @@ export interface LoginFormProps {
   photoSrc: string;
   photoAlt: string;
   /**
-   * "credentials" (default): free-text "Email or username" field, for the
-   * admin-portal. "employeeNumber": digit-only, exactly EMPLOYEE_NUMBER_LENGTH
-   * characters, for the collection-app — staff never had an email/username
-   * field to begin with on that screen.
+   * "credentials" (default): email field, for the admin-portal — admins sign
+   * in with email only. "employeeNumber": digit-only, exactly
+   * EMPLOYEE_NUMBER_LENGTH characters, for the collection-app.
    */
   identifierMode?: "credentials" | "employeeNumber";
-}
-
-function EyeIcon({ open }: { open: boolean }) {
-  return open ? (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" strokeLinejoin="round" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ) : (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-      <path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M6.7 6.7C4.1 8.3 2 12 2 12s3.5 7 10 7c1.9 0 3.5-.5 4.9-1.3M17.4 17.4C19.7 15.8 22 12 22 12s-1.2-2.4-3.4-4.3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
 }
 
 /** Live, not decorative — a real ping against /health, since a fake "System
@@ -80,7 +67,7 @@ export function LoginForm({
   const [clientError, setClientError] = useState<string | null>(null);
 
   const isEmployeeNumber = identifierMode === "employeeNumber";
-  const identifierLabel = isEmployeeNumber ? "employee number" : "email or username";
+  const identifierLabel = isEmployeeNumber ? "employee number" : "email";
 
   function handleIdentifierChange(value: string) {
     if (isEmployeeNumber) {
@@ -105,6 +92,10 @@ export function LoginForm({
     }
     if (isEmployeeNumber && !isValidEmployeeNumber(identifier)) {
       setClientError(`Employee number must be exactly ${EMPLOYEE_NUMBER_LENGTH} digits.`);
+      return;
+    }
+    if (!isEmployeeNumber && !isValidEmail(identifier)) {
+      setClientError("Please enter a valid email address.");
       return;
     }
     if (password === "") {
@@ -147,20 +138,20 @@ export function LoginForm({
             <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
               <label className="block">
                 <span className="text-sm font-semibold text-ink">
-                  {isEmployeeNumber ? "Employee number" : "Email or username"}
+                  {isEmployeeNumber ? "Employee number" : "Email"}
                 </span>
                 <input
-                  type="text"
-                  inputMode={isEmployeeNumber ? "numeric" : "text"}
+                  type={isEmployeeNumber ? "text" : "email"}
+                  inputMode={isEmployeeNumber ? "numeric" : "email"}
                   pattern={isEmployeeNumber ? "\\d*" : undefined}
                   maxLength={isEmployeeNumber ? EMPLOYEE_NUMBER_LENGTH : undefined}
                   value={identifier}
                   onChange={(e) => handleIdentifierChange(e.target.value)}
-                  autoComplete={isEmployeeNumber ? "off" : "username"}
+                  autoComplete={isEmployeeNumber ? "off" : "email"}
                   placeholder={
                     isEmployeeNumber
                       ? `Enter your ${EMPLOYEE_NUMBER_LENGTH}-digit employee number`
-                      : "Enter your email or username"
+                      : "Enter your email address"
                   }
                   className="mt-1.5 block w-full rounded-xl border border-ink/15 px-4 py-3 text-ink placeholder:text-ink/35 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
@@ -183,7 +174,7 @@ export function LoginForm({
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/40 transition hover:text-ink/70"
                   >
-                    <EyeIcon open={showPassword} />
+                    <EyeIcon open={showPassword} className="h-5 w-5" />
                   </button>
                 </div>
               </label>

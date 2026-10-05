@@ -55,7 +55,7 @@ def get_transaction(
     if user.role != UserRole.ADMIN and transaction.collection_point_id != user.collection_point_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only view your own collection point")
 
-    return to_out(transaction, float(transaction.material_rate.rate))
+    return to_out(transaction)
 
 
 # ---- Payments (Phase 7, blueprint SS25 item 2: manual recording only) ----

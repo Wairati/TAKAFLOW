@@ -28,10 +28,18 @@ class CollectionTransaction(TimestampMixin, Base):
         ForeignKey("collection_point.id"), nullable=False
     )
     material_id: Mapped[int] = mapped_column(ForeignKey("material.id"), nullable=False)
-    material_rate_id: Mapped[int] = mapped_column(
-        ForeignKey("material_rate.id"), nullable=False
+    # NULL only for a collaborative collection (partner_id set below) — those
+    # skip the rate lookup entirely since no payment is expected.
+    material_rate_id: Mapped[int | None] = mapped_column(
+        ForeignKey("material_rate.id"), nullable=True
     )
-    material_rate: Mapped["MaterialRate"] = relationship()
+    material_rate: Mapped["MaterialRate | None"] = relationship()
+
+    # Set when this collection was contributed by a partner organisation
+    # (e.g. an environmental conservation group) rather than a paid walk-in
+    # collector — no Payment is ever created against a transaction with this
+    # set (see payment_service.record_payment).
+    partner_id: Mapped[int | None] = mapped_column(ForeignKey("partner.id"), nullable=True)
 
     recorded_by_user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
 

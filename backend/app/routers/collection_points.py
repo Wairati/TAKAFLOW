@@ -64,7 +64,7 @@ def accept_material(
     db: Session = Depends(get_db),
     admin: User = Depends(require_role(UserRole.ADMIN)),
 ) -> AcceptedMaterialOut:
-    return material_service.accept_material(db, point_id, data.material_id, data.rate, admin)
+    return material_service.accept_material(db, point_id, data.material_id, data.rate, admin, grade=data.grade)
 
 
 @router.patch("/{point_id}/materials/{material_id}/rate", response_model=MaterialRateOut)
@@ -75,7 +75,7 @@ def change_rate(
     db: Session = Depends(get_db),
     admin: User = Depends(require_role(UserRole.ADMIN)),
 ) -> MaterialRate:
-    return material_service.change_rate(db, point_id, material_id, data.rate, admin)
+    return material_service.change_rate(db, point_id, material_id, data.rate, admin, grade=data.grade)
 
 
 @router.delete("/{point_id}/materials/{material_id}", status_code=204)

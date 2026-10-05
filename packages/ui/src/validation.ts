@@ -11,6 +11,36 @@ export function isValidEmployeeNumber(value: string): boolean {
   return new RegExp(`^\\d{${EMPLOYEE_NUMBER_LENGTH}}$`).test(value);
 }
 
+export const PHONE_MAX_LENGTH = 10;
+
+export function isValidPhoneNumber(value: string): boolean {
+  return value.length > 0 && value.length <= PHONE_MAX_LENGTH && !/\D/.test(value);
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function isValidEmail(value: string): boolean {
+  return EMAIL_PATTERN.test(value.trim());
+}
+
+export const FULL_NAME_MIN_LENGTH = 2;
+
+/** Returns a specific reason the name is invalid, or null if it's fine —
+ * mirrors backend/app/core/validation.py's validate_full_name exactly. */
+export function fullNameError(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length < FULL_NAME_MIN_LENGTH) {
+    return `Full name must be at least ${FULL_NAME_MIN_LENGTH} characters.`;
+  }
+  if (/\d/.test(trimmed)) {
+    return "Full name cannot contain numbers.";
+  }
+  if (!/\p{L}/u.test(trimmed)) {
+    return "Full name must contain at least one letter.";
+  }
+  return null;
+}
+
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 12;
 export const PASSWORD_SPECIAL_CHARACTERS = "!@#$%^&*";

@@ -34,7 +34,9 @@ export function Dashboard({ user, onNavigate }: { user: UserOut; onNavigate: (pa
   }, []);
 
   const totalQuantity = todaysTx.reduce((sum, t) => sum + t.quantity, 0);
-  const totalValue = todaysTx.reduce((sum, t) => sum + t.rate * t.quantity, 0);
+  // A collaborative collection (partner_id set) has no rate — it contributes
+  // to the day's recovered quantity but not to its priced value.
+  const totalValue = todaysTx.reduce((sum, t) => sum + (t.rate ?? 0) * t.quantity, 0);
   const activeBranches = points.filter((p) => p.is_active).length;
   const recent = [...todaysTx]
     .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())

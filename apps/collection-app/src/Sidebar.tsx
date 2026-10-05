@@ -1,13 +1,13 @@
-import { CashIcon, ChartIcon, ClockIcon, HomeIcon, PackageIcon, PlusBoxIcon } from "./icons";
+import { CartIcon, CashIcon, ClockIcon, HomeIcon, PackageIcon, PlusBoxIcon } from "./icons";
 import type { Page } from "./App";
 
 const NAV_ITEMS: { page: Page; label: string; icon: typeof HomeIcon }[] = [
   { page: "dashboard", label: "Dashboard", icon: HomeIcon },
   { page: "log-collection", label: "Log Collection", icon: PlusBoxIcon },
   { page: "inventory", label: "Inventory", icon: PackageIcon },
+  { page: "buyer-orders", label: "Buyer Orders", icon: CartIcon },
   { page: "collectors", label: "Collectors", icon: CashIcon },
   { page: "history", label: "History", icon: ClockIcon },
-  { page: "reports", label: "Reports", icon: ChartIcon },
 ];
 
 interface SidebarProps {
@@ -24,7 +24,7 @@ export function Sidebar({ page, onNavigate, branchName, isOnline, open, onClose 
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col bg-forest px-5 py-6 text-mist transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col overflow-y-auto bg-forest px-5 py-6 text-mist transition-transform lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >

@@ -70,3 +70,32 @@ export function ChevronDownIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function DownloadIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 3v12M7 10.5 12 15.5 17 10.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 17.5v1.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function CartIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8">
+      <path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 2-1.6L20.5 8H6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="10" cy="20.5" r="1.3" />
+      <circle cx="17" cy="20.5" r="1.3" />
+    </svg>
+  );
+}
+
+export function HandshakeIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8">
+      <path d="M2.5 11.5 6 8l3.5 3-2 2a1.4 1.4 0 0 0 2 2l3.6-3.6a2 2 0 0 1 2.8 0l1.1 1.1" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M18 8l3.5 3.5-4 4a1.4 1.4 0 0 1-2-2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.5 15.5 8 17a1.4 1.4 0 0 0 2 2l.5-.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

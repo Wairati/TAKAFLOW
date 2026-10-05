@@ -27,6 +27,11 @@ def _get_transaction_scoped(db: Session, transaction_id: int, requester: User) -
 def record_payment(db: Session, transaction_id: int, data: PaymentCreate, staff: User) -> Payment:
     transaction = _get_transaction_scoped(db, transaction_id, staff)
 
+    if transaction.partner_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This was a collaborative collection — no payment is expected for it",
+        )
     if data.amount <= 0:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Amount must be positive")
     if data.method == PaymentMethod.MPESA and not data.reference_number:

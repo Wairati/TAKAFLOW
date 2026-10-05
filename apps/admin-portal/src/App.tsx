@@ -3,12 +3,14 @@ import { AuthProvider, useAuth, LoginForm } from "@takaflow/ui";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { Dashboard } from "./Dashboard";
-import { CreateStaffForm } from "./CreateStaffForm";
+import { Staff } from "./Staff";
 import { Inventory } from "./Inventory";
 import { History } from "./History";
 import { Reports } from "./Reports";
+import { BuyerOrders } from "./BuyerOrders";
+import { Partners } from "./Partners";
 
-export type Page = "dashboard" | "staff" | "inventory" | "history" | "reports";
+export type Page = "dashboard" | "staff" | "inventory" | "history" | "reports" | "buyer-orders" | "partners";
 
 const PAGE_TITLE: Record<Page, string> = {
   dashboard: "Dashboard",
@@ -16,6 +18,8 @@ const PAGE_TITLE: Record<Page, string> = {
   inventory: "Inventory",
   history: "History",
   reports: "Reports",
+  "buyer-orders": "Buyer Orders",
+  partners: "Partners",
 };
 
 function AuthedApp() {
@@ -36,24 +40,26 @@ function AuthedApp() {
       />
     );
 
-  // Staff creation is admin-only; a staff account that opens admin-portal
-  // (not blocked — it's a valid, if unusual, way to check on one's own
-  // branch) just never sees that nav item or page.
+  // Staff creation and partner management are admin-only; a staff account
+  // that opens admin-portal (not blocked — it's a valid, if unusual, way to
+  // check on one's own branch) just never sees those nav items or pages.
   const isAdmin = user.role === "admin";
-  const activePage = page === "staff" && !isAdmin ? "dashboard" : page;
+  const activePage = (page === "staff" || page === "partners") && !isAdmin ? "dashboard" : page;
 
   return (
-    <div className="flex min-h-screen bg-mist/10">
+    <div className="flex h-screen overflow-hidden bg-mist/10 print:h-auto print:overflow-visible">
       <Sidebar page={activePage} onNavigate={setPage} open={sidebarOpen} onClose={() => setSidebarOpen(false)} isAdmin={isAdmin} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col print:h-auto">
         <TopBar user={user} onMenuClick={() => setSidebarOpen(true)} onSignOut={logout} />
-        <main className="flex-1 overflow-y-auto p-5 sm:p-8">
+        <main className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-8 print:h-auto print:overflow-visible print:p-0">
           <h1 className="mb-5 text-2xl font-extrabold text-ink">{PAGE_TITLE[activePage]}</h1>
           {activePage === "dashboard" && <Dashboard user={user} onNavigate={setPage} />}
-          {activePage === "staff" && isAdmin && <CreateStaffForm />}
+          {activePage === "staff" && isAdmin && <Staff />}
           {activePage === "inventory" && <Inventory />}
           {activePage === "history" && <History />}
           {activePage === "reports" && <Reports />}
+          {activePage === "buyer-orders" && <BuyerOrders user={user} />}
+          {activePage === "partners" && isAdmin && <Partners />}
         </main>
       </div>
     </div>

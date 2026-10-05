@@ -121,4 +121,4 @@ def test_public_materials_show_rate(active_point_with_material):
     body = response.json()
     assert len(body) == 1
     assert body[0]["material"]["id"] == material_id
-    assert body[0]["current_rate"]["rate"] == 18.0
+    assert body[0]["rates"][0]["rate"] == 18.0

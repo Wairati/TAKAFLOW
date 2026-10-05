@@ -12,24 +12,26 @@ from app.models.collection_point import CollectionPoint
 from app.models.collection_transaction import CollectionTransaction
 from app.models.inventory import MovementType
 from app.models.material import Material
+from app.models.partner import Partner
 from app.models.user import User
 from app.schemas.collection_transaction import CollectionTransactionCreate, CollectionTransactionOut
 from app.services import inventory_service, material_service
 
 
-def to_out(transaction: CollectionTransaction, rate: float) -> CollectionTransactionOut:
+def to_out(transaction: CollectionTransaction) -> CollectionTransactionOut:
     return CollectionTransactionOut(
         id=transaction.id,
         client_transaction_uuid=transaction.client_transaction_uuid,
         collection_point_id=transaction.collection_point_id,
         material_id=transaction.material_id,
         material_rate_id=transaction.material_rate_id,
-        rate=rate,
+        rate=float(transaction.material_rate.rate) if transaction.material_rate else None,
         recorded_by_user_id=transaction.recorded_by_user_id,
         quantity=transaction.quantity,
         grade=transaction.grade,
         collector_name=transaction.collector_name,
         collector_phone=transaction.collector_phone,
+        partner_id=transaction.partner_id,
         occurred_at=transaction.occurred_at,
         created_at=transaction.created_at,
     )
@@ -58,7 +60,7 @@ def record_collection(
         # Idempotent replay always succeeds regardless of what's changed
         # since the original was recorded (SS10) - the checks below apply
         # only to genuinely new transactions.
-        return to_out(existing, float(existing.material_rate.rate))
+        return to_out(existing)
 
     # Phase 14 hardening: deactivating a branch or a material (Phase 4)
     # didn't used to stop new collections against it (Phase 6) - closing a
@@ -75,18 +77,32 @@ def record_collection(
             status_code=status.HTTP_409_CONFLICT, detail="This material is no longer active"
         )
 
-    current_rate = material_service.get_current_rate(db, staff.collection_point_id, data.material_id)
-    if current_rate is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="This material is not currently accepted at your collection point",
-        )
+    # A collaborative collection (contributed by a partner organisation, e.g.
+    # an environmental conservation group) skips the rate lookup entirely —
+    # no payment is ever expected for it, so there's nothing to price.
+    if data.partner_id is not None:
+        partner = db.get(Partner, data.partner_id)
+        if partner is None or not partner.is_active:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This partner is not currently active")
+        current_rate = None
+    else:
+        current_rate = material_service.get_current_rate(db, staff.collection_point_id, data.material_id, data.grade)
+        if current_rate is None:
+            any_rates = material_service.list_current_rates(db, staff.collection_point_id, data.material_id)
+            if not any_rates:
+                detail = "This material is not currently accepted at your collection point"
+            elif data.grade is None:
+                detail = "Select a grade for this material"
+            else:
+                detail = f'"{data.grade}" is not a configured grade for this material — check the grade options'
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
 
     transaction = CollectionTransaction(
         client_transaction_uuid=data.client_transaction_uuid,
         collection_point_id=staff.collection_point_id,
         material_id=data.material_id,
-        material_rate_id=current_rate.id,
+        material_rate_id=current_rate.id if current_rate else None,
+        partner_id=data.partner_id,
         recorded_by_user_id=staff.id,
         device_id=None,  # Phase 8: set once offline devices are identified
         quantity=data.quantity,
@@ -100,6 +116,8 @@ def record_collection(
 
     # SS11: exactly one ledger entry per transaction, in the same transaction
     # as the transaction row itself — both succeed or both roll back together.
+    # Material still physically arrives regardless of whether it was paid
+    # for, so a collaborative collection posts to inventory the same way.
     inventory_service.post_movement(
         db,
         collection_point_id=staff.collection_point_id,
@@ -112,7 +130,7 @@ def record_collection(
 
     db.commit()
     db.refresh(transaction)
-    return to_out(transaction, float(current_rate.rate))
+    return to_out(transaction)
 
 
 def list_transactions(
@@ -138,7 +156,7 @@ def list_transactions(
         stmt = stmt.where(local_date == on_date)
 
     rows = db.scalars(stmt).all()
-    return [to_out(row, float(row.material_rate.rate)) for row in rows]
+    return [to_out(row) for row in rows]
 
 
 def get_transaction(db: Session, transaction_id: int) -> CollectionTransaction:

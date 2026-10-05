@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy import or_, select
+from sqlalchemy import update as sql_update
 from sqlalchemy.orm import Session
 
 from app.core.security import (
@@ -13,7 +14,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.refresh_token import RefreshToken
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.auth import TokenResponse, UserCreate
 
 
@@ -108,6 +109,62 @@ def create_user(db: Session, data: UserCreate) -> User:
         collection_point_id=data.collection_point_id,
     )
     db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def list_users(
+    db: Session, *, role: UserRole | None = None, collection_point_id: int | None = None
+) -> list[User]:
+    stmt = select(User)
+    if role is not None:
+        stmt = stmt.where(User.role == role)
+    if collection_point_id is not None:
+        stmt = stmt.where(User.collection_point_id == collection_point_id)
+    stmt = stmt.order_by(User.full_name)
+    return list(db.scalars(stmt))
+
+
+def set_active(db: Session, user_id: int, is_active: bool) -> User:
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    user.is_active = is_active
+    if not is_active:
+        # Deactivating only blocks future logins/refreshes (authenticate and
+        # refresh both already check is_active) - also revoke every
+        # outstanding refresh token so an already-logged-in session can't
+        # just refresh its way to a new access token afterward. The current
+        # access token, if any, still expires naturally on its own short TTL.
+        db.execute(
+            sql_update(RefreshToken)
+            .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
+            .values(revoked_at=datetime.now(timezone.utc))
+        )
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def reset_password(db: Session, user_id: int, new_password: str) -> User:
+    """Admin-mediated reset - there's no self-service "forgot password" flow
+    (no email sending is set up), so this is the actual answer to "someone
+    forgot their password": an admin sets a new one for them here. Revokes
+    every outstanding refresh token, same reasoning as deactivating - a
+    session that predates the reset shouldn't be able to keep refreshing on
+    the old credential's trust."""
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    user.hashed_password = hash_password(new_password)
+    db.execute(
+        sql_update(RefreshToken)
+        .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
+        .values(revoked_at=datetime.now(timezone.utc))
+    )
     db.commit()
     db.refresh(user)
     return user

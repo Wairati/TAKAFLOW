@@ -32,7 +32,7 @@ def create_material(db: Session, data: MaterialCreate, admin: User) -> Material:
     if db.scalar(select(Material).where(Material.name == data.name)) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A material with this name already exists")
 
-    material = Material(name=data.name, unit=data.unit)
+    material = Material(name=data.name, unit=data.unit, selling_rate=data.selling_rate)
     db.add(material)
     db.flush()
     audit_service.record(
@@ -69,27 +69,44 @@ def update_material(db: Session, material_id: int, data: MaterialUpdate, admin: 
 
 
 # ---- Per-point acceptance & rate history (blueprint SS08 challenges 2 & 3) ----
+# Rates are keyed by (point, material, grade) - `grade=None` is a material's
+# ungraded/plain tier. A material can carry any mix of one ungraded tier and
+# any number of named graded tiers at once (see MaterialRate's docstring).
 
 
-def get_current_rate(db: Session, point_id: int, material_id: int) -> MaterialRate | None:
+def get_current_rate(db: Session, point_id: int, material_id: int, grade: str | None = None) -> MaterialRate | None:
     return db.scalar(
         select(MaterialRate).where(
             MaterialRate.collection_point_id == point_id,
             MaterialRate.material_id == material_id,
+            MaterialRate.grade == grade if grade is not None else MaterialRate.grade.is_(None),
             MaterialRate.effective_to.is_(None),
         )
     )
 
 
-def _rotate_rate(db: Session, point_id: int, material_id: int, new_rate: float) -> MaterialRate:
-    """Close whatever rate is currently open, then insert the new one. The two
-    steps are flushed separately so the DB never sees two open rows for the
-    same (material, point) at once — which the partial unique index in SS08
-    would reject anyway, but this keeps the ordering explicit rather than
-    accidental."""
+def list_current_rates(db: Session, point_id: int, material_id: int) -> list[MaterialRate]:
+    stmt = (
+        select(MaterialRate)
+        .where(
+            MaterialRate.collection_point_id == point_id,
+            MaterialRate.material_id == material_id,
+            MaterialRate.effective_to.is_(None),
+        )
+        .order_by(MaterialRate.grade.is_(None).desc(), MaterialRate.grade)
+    )
+    return list(db.scalars(stmt))
+
+
+def _rotate_rate(db: Session, point_id: int, material_id: int, new_rate: float, grade: str | None) -> MaterialRate:
+    """Close whatever rate is currently open for this (point, material, grade)
+    tier, then insert the new one. The two steps are flushed separately so the
+    DB never sees two open rows for the same tier at once — which the partial
+    unique indexes in SS08 would reject anyway, but this keeps the ordering
+    explicit rather than accidental."""
     now = datetime.now(timezone.utc)
 
-    current = get_current_rate(db, point_id, material_id)
+    current = get_current_rate(db, point_id, material_id, grade)
     if current is not None:
         current.effective_to = now
         db.flush()
@@ -97,6 +114,7 @@ def _rotate_rate(db: Session, point_id: int, material_id: int, new_rate: float) 
     new_row = MaterialRate(
         material_id=material_id,
         collection_point_id=point_id,
+        grade=grade,
         rate=new_rate,
         effective_from=now,
         effective_to=None,
@@ -106,51 +124,64 @@ def _rotate_rate(db: Session, point_id: int, material_id: int, new_rate: float) 
     return new_row
 
 
-def accept_material(db: Session, point_id: int, material_id: int, rate: float, admin: User) -> AcceptedMaterialOut:
+def accept_material(
+    db: Session, point_id: int, material_id: int, rate: float, admin: User, grade: str | None = None
+) -> AcceptedMaterialOut:
     point = db.get(CollectionPoint, point_id)
     if point is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection point not found")
     material = get_material(db, material_id)
 
-    existing = db.scalar(
+    existing_link = db.scalar(
         select(CollectionPointMaterial).where(
             CollectionPointMaterial.collection_point_id == point_id,
             CollectionPointMaterial.material_id == material_id,
         )
     )
-    if existing is None:
+    if existing_link is None:
         db.add(CollectionPointMaterial(collection_point_id=point_id, material_id=material_id))
 
-    new_rate = _rotate_rate(db, point_id, material_id, rate)
+    existing_tier = get_current_rate(db, point_id, material_id, grade)
+    if existing_tier is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This material already has a current rate for that grade — use change_rate to update it",
+        )
+
+    new_rate = _rotate_rate(db, point_id, material_id, rate, grade)
 
     audit_service.record(
         db,
         user_id=admin.id,
-        action="material.accepted_at_point" if existing is None else "material.rate_changed",
+        action="material.accepted_at_point" if existing_link is None else "material.rate_added",
         entity_type="collection_point_material",
         entity_id=point_id,
-        details={"material_id": material_id, "rate": rate},
+        details={"material_id": material_id, "rate": rate, "grade": grade},
     )
     db.commit()
     db.refresh(new_rate)
-    return AcceptedMaterialOut.model_validate({"material": material, "current_rate": new_rate})
+    return AcceptedMaterialOut.model_validate(
+        {"material": material, "rates": list_current_rates(db, point_id, material_id)}
+    )
 
 
-def change_rate(db: Session, point_id: int, material_id: int, rate: float, admin: User) -> MaterialRate:
-    if get_current_rate(db, point_id, material_id) is None:
+def change_rate(
+    db: Session, point_id: int, material_id: int, rate: float, admin: User, grade: str | None = None
+) -> MaterialRate:
+    if get_current_rate(db, point_id, material_id, grade) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="This material is not currently accepted at this collection point",
+            detail="This material/grade is not currently accepted at this collection point",
         )
 
-    new_rate = _rotate_rate(db, point_id, material_id, rate)
+    new_rate = _rotate_rate(db, point_id, material_id, rate, grade)
     audit_service.record(
         db,
         user_id=admin.id,
         action="material.rate_changed",
         entity_type="collection_point_material",
         entity_id=point_id,
-        details={"material_id": material_id, "rate": rate},
+        details={"material_id": material_id, "rate": rate, "grade": grade},
     )
     db.commit()
     db.refresh(new_rate)
@@ -158,6 +189,8 @@ def change_rate(db: Session, point_id: int, material_id: int, rate: float, admin
 
 
 def stop_accepting(db: Session, point_id: int, material_id: int, admin: User) -> None:
+    """Retires every current tier (ungraded and graded alike) for this
+    material at this branch — the material stops being offered there at all."""
     link = db.scalar(
         select(CollectionPointMaterial).where(
             CollectionPointMaterial.collection_point_id == point_id,
@@ -170,9 +203,9 @@ def stop_accepting(db: Session, point_id: int, material_id: int, admin: User) ->
             detail="This material is not currently accepted at this collection point",
         )
 
-    current = get_current_rate(db, point_id, material_id)
-    if current is not None:
-        current.effective_to = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc)
+    for current in list_current_rates(db, point_id, material_id):
+        current.effective_to = now
 
     db.delete(link)
     audit_service.record(
@@ -193,9 +226,9 @@ def list_accepted_materials(db: Session, point_id: int) -> list[AcceptedMaterial
     result = []
     for link in links:
         material = get_material(db, link.material_id)
-        current_rate = get_current_rate(db, point_id, link.material_id)
-        if current_rate is not None:
-            result.append(AcceptedMaterialOut.model_validate({"material": material, "current_rate": current_rate}))
+        rates = list_current_rates(db, point_id, link.material_id)
+        if rates:
+            result.append(AcceptedMaterialOut.model_validate({"material": material, "rates": rates}))
     return result
 
 

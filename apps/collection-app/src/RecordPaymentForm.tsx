@@ -17,7 +17,10 @@ export function RecordPaymentForm({
 }) {
   // Cash first: the target audience mostly has no other way to be paid.
   const [method, setMethod] = useState<PaymentMethod>("cash");
-  const [amount, setAmount] = useState(String((transaction.rate * transaction.quantity).toFixed(2)));
+  // This form is only ever shown for a transaction that has a rate (never
+  // for a collaborative collection, which is never payable) — the ?? 0
+  // fallback is just to satisfy the nullable type, not an expected case.
+  const [amount, setAmount] = useState(String(((transaction.rate ?? 0) * transaction.quantity).toFixed(2)));
   const [reference, setReference] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -25,8 +28,17 @@ export function RecordPaymentForm({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (amount.trim() === "") {
+      setError("Please enter an amount.");
+      return;
+    }
+    if (!(Number(amount) > 0)) {
+      setError("Amount must be a number greater than 0.");
+      return;
+    }
     if (method === "mpesa" && !reference.trim()) {
-      setError("An M-Pesa payment needs the confirmation code");
+      setError("An M-Pesa payment needs the confirmation code.");
       return;
     }
     setSubmitting(true);
@@ -68,7 +80,6 @@ export function RecordPaymentForm({
           type="number"
           step="0.01"
           min="0.01"
-          required
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           className="mt-1 block w-full rounded-lg border border-ink/15 px-3 py-2 text-sm outline-none focus:border-primary"
